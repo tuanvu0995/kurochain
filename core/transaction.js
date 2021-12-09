@@ -9,6 +9,15 @@ class TXOutput {
     this.value = value
     this.scriptPubKey = scriptPubKey
   }
+
+  /**
+   * 
+   * @param {String} unlockingData
+   * @return {Boolean}
+   */
+   canBeUnlockedWith(unlockingData) {
+    return this.scriptPubKey === unlockingData
+  }
 }
 
 class TXInput {
@@ -22,12 +31,41 @@ class TXInput {
     this.vout = vout
     this.scriptSig = scriptSig
   }
+
+  /**
+   * 
+   * @param {String} unlockingData
+   * @return {Boolean}
+   */
+   canUnlockOutputWith(unlockingData) {
+    return this.ScriptSig === unlockingData
+  }
 }
 
 class Transaction {
+  /**
+   * 
+   * @param {String} id 
+   * @param {Array<TXInput>} txIn 
+   * @param {Array<TXOutput>} txOut 
+   */
   constructor(id, txIn, txOut) {
+    /**
+     * @type{Sring}
+     * @public
+     */
     this.id = id
+
+    /**
+     * @type{Array<TXInput>}
+     * @public
+     */
     this.vin = txIn
+
+    /**
+     * @type{Array<TXOutput>}
+     * @public
+     */
     this.vout = txOut
   }
 
@@ -41,22 +79,12 @@ class Transaction {
   }
 
   /**
-   * 
-   * @param {String} unlockingData
-   * @return {Boolean}
+   * @returns {Boolean}
    */
-  canUnlockOutputWith(unlockingData) {
-    return this.txIn.ScriptSig === unlockingData
+  isCoinbase() {
+    return this.vin.txId === ''
   }
-
-  /**
-   * 
-   * @param {String} unlockingData
-   * @return {Boolean}
-   */
-  canBeUnlockedWith(unlockingData) {
-    return this.txOut.ScriptSig === unlockingData
-  }
+  
 }
 
 module.exports = Transaction

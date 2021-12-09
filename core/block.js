@@ -8,6 +8,11 @@ class Block {
    */
   constructor(transactions, prevHash) {
     this.timestamp = new Date().getTime()
+
+    /**
+     * @type{Array<Transaction>}
+     * @public
+     */
     this.transactions = transactions
     this.prevHash = prevHash
     this.nonce = 0

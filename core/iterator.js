@@ -6,6 +6,10 @@ class BlockchainIterator {
     this.db = db
   }
 
+  /**
+   * 
+   * @returns {Promise<Block>}
+   */
   async next() {
     const block = new Block()
     const data = await this.db.get(this.currentHash)
