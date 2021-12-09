@@ -5,12 +5,30 @@ const ProofOfWork = require('./proof')
 const Transaction = require('./transaction')
 const { hexToString } = require('./utils/hexToString')
 
-const COINS = 1000
-
 class BlockChain {
   constructor() {
     this.db = new Database('./tmp/block')
     this.tip = null
+  }
+
+  /**
+   *
+   * @param {Array<Transaction>} transactions
+   * @returns {Promise<Block>}
+   */
+  async mineBlock(transactions) {
+    let lastHash = ""
+    let lashHeight = 0
+
+    for (let txIndex = 0; txIndex < transactions.length; txIndex++) {
+      const isValid = await this.verifyTransaction(transactions[txIndex])
+      if (!isValid) {
+        throw new Error("ERROR: Invalid transaction")
+      }
+    }
+
+    const block = await this.addBlock(transactions)
+    return block
   }
 
   /**
@@ -47,10 +65,15 @@ class BlockChain {
     if (lastBlockHash) {
       this.tip = lastBlockHash
     } else {
-      const coinbase = Transaction.NewCoinbaseTX(address, COINS)
+      const coinbase = Transaction.NewCoinbaseTX(address)
       const genesis = this.newGenesisBlock(coinbase)
+      const pow = new ProofOfWork(genesis)
+      const { nonce, hash } = pow.run()
+      genesis.nonce = nonce
+      genesis.hash = hash
       await this.db.put(genesis.hash, genesis.serialize())
       await this.db.put('l', genesis.hash)
+      this.tip = genesis
     }
   }
 
@@ -65,25 +88,33 @@ class BlockChain {
     const bci = new BlockchainIterator(this.tip, this.db)
     while (true) {
       const block = await bci.next()
-      for (let tx in block.transactions) {
+      for (let i = 0; i < block.transactions.length; i++) {
+        const tx = block.transactions[i]
         const txId = hexToString(tx.id)
 
-        for (let out in tx.vout) {
+        for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
+          const out = tx.vout[outIndex]
           if (spentTXOs[txId]) {
-            for (let spentOut in spentTXOs[txId]) {
+            for (
+              let spendOutIndex = 0;
+              spendOutIndex < spentTXOs[txId].length;
+              spendOutIndex++
+            ) {
+              const spentOut = spentTXOs[txId][spendOutIndex]
               if (spentOut === out) {
                 continue
               }
             }
           }
-          if (out.CanBeUnlockedWith(address)) {
+          if (tx.canBeUnlockedWith(out, address)) {
             unspentTXs.push(tx)
           }
         }
 
         if (!tx.isCoinBase()) {
-          for (let _in in tx.vin) {
-            if (_in.canUnlockOutputWith(address)) {
+          for (let inIndex = 0; inIndex < tx.vin.length; i++) {
+            const _in = tx.vin[inIndex]
+            if (tx.canUnlockOutputWith(_in, address)) {
               const inTxID = hexToString(_in.Txid)
               spentTXOs[inTxID].push(_in.Vout)
             }
@@ -103,18 +134,133 @@ class BlockChain {
    * @param {String} address
    * @returns{Array}
    */
-  findUTXO(address) {
+  async findUTXO(address) {
     const UTXOs = []
-    const unspentTransactions = this.findUnspentTransactions(address)
-    for (let tx in unspentTransactions) {
-      for (let out in tx.vout) {
-        if (out.canBeUnlockedWith(address)) {
+    const unspentTransactions = await this.findUnspentTransactions(address)
+    unspentTransactions.map((unspendTx) => {
+      unspendTx.vout.map((out) => {
+        if (unspendTx.canBeUnlockedWith(out, address)) {
           UTXOs.push(out)
+        }
+      })
+    })
+    return UTXOs
+  }
+
+  /**
+   *
+   * @param {String} address
+   * @param {Number} amount
+   * @returns {{accumulated: Number, unspentOutputs: Array}}
+   */
+  async findSpendableOutputs(address, amount) {
+    const unspentOutputs = []
+    const unspentTXs = await this.findUnspentTransactions(address)
+    let accumulated = 0
+
+    for (let txIndex = 0; txIndex < unspentTXs.length; txIndex++) {
+      const tx = unspentTXs[txIndex]
+      const txId = hexToString(tx.id)
+      if (!unspentOutputs[txId]) {
+        unspentOutputs[txId] = []
+      }
+
+      for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
+        const out = tx.vout[outIndex]
+        accumulated += out.value
+        unspentOutputs[txId].push(txId)
+        if (accumulated >= amount) {
+          break
         }
       }
     }
 
-    return UTXOs
+    return { accumulated, unspentOutputs }
+  }
+
+  /**
+   *
+   * @param {String} from
+   * @param {String} to
+   * @param {Number} amount
+   * @returns {Transaction}
+   */
+  async newUTXOTransaction(from, to, amount) {
+    const inputs = []
+    const outputs = []
+
+    const { accumulated, unspentOutputs } = await this.findSpendableOutputs(
+      from,
+      amount
+    )
+    if (accumulated < amount) {
+      throw new Error('ERROR: Not enough funds')
+    }
+
+    for (let txIndex = 0; txIndex < unspentOutputs.length; txIndex++) {
+      const tx = unspentOutputs[txIndex]
+      const txId = hexToString(tx.id)
+      for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
+        const out = tx.vout[outIndex]
+        inputs.push({ txId, out, scriptSig: from })
+      }
+    }
+    outputs.push({ value: amount, scriptPubKey: to })
+
+    if (accumulated > amount) {
+      outputs.push({ value: accumulated - amount, scriptPubKey: from })
+    }
+
+    const tx = new Transaction('', inputs, outputs)
+    tx.id = tx.hash()
+
+    return tx
+  }
+
+  /**
+   *
+   * @param {Transaction} transaction
+   * @returns {Promise<Boolean>}
+   */
+  async verifyTransaction(transaction) {
+    if (transaction.isCoinBase()) {
+      return true
+    }
+
+    const prevTXs = []
+    for (let vinIndex = 0; vinIndex < transaction.vin.length; vinIndex++) {
+      const prevTx = this.findTransaction(vin.txId)
+      if (!prevTXs) {
+        throw new Error('ERROR: Transaction is not found')
+      }
+      prevTXs[hexToString(transaction.id)] = prevTx
+    }
+
+    return transaction.verify(prevTXs)
+  }
+
+  /**
+   *
+   * @param {String} id
+   * @return {Promise<Transaction>}
+   */
+  async findTransaction(id) {
+    const bci = new BlockchainIterator(this.db)
+
+    while (true) {
+      const block = await bci.next()
+      for (let txIndex = 0; txIndex < block.transactions.length; txIndex++) {
+        if ([block.transactions[txIndex]].id === id) {
+          return block.transactions[txIndex]
+        }
+      }
+
+      if (!block.prevHash.length) {
+        break
+      }
+    }
+
+    return null
   }
 }
 

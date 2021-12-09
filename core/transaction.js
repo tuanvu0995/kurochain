@@ -1,71 +1,17 @@
+const crypto = require('crypto')
+
 const REWARD = 100
-
-class TXOutput {
-  /**
-   * @param {Number} value
-   * @param {String} scriptPubKey
-   */
-  constructor(value, scriptPubKey) {
-    this.value = value
-    this.scriptPubKey = scriptPubKey
-  }
-
-  /**
-   * 
-   * @param {String} unlockingData
-   * @return {Boolean}
-   */
-   canBeUnlockedWith(unlockingData) {
-    return this.scriptPubKey === unlockingData
-  }
-}
-
-class TXInput {
-  /**
-   * @param {String} txId
-   * @param {Number} vout
-   * @param {String} scriptSig
-   */
-  constructor(txId, vout, scriptSig) {
-    this.txId = txId
-    this.vout = vout
-    this.scriptSig = scriptSig
-  }
-
-  /**
-   * 
-   * @param {String} unlockingData
-   * @return {Boolean}
-   */
-   canUnlockOutputWith(unlockingData) {
-    return this.ScriptSig === unlockingData
-  }
-}
 
 class Transaction {
   /**
-   * 
-   * @param {String} id 
-   * @param {Array<TXInput>} txIn 
-   * @param {Array<TXOutput>} txOut 
+   *
+   * @param {String} id
+   * @param {Array<TXInput>} txIn
+   * @param {Array<TXOutput>} txOut
    */
   constructor(id, txIn, txOut) {
-    /**
-     * @type{Sring}
-     * @public
-     */
     this.id = id
-
-    /**
-     * @type{Array<TXInput>}
-     * @public
-     */
     this.vin = txIn
-
-    /**
-     * @type{Array<TXOutput>}
-     * @public
-     */
     this.vout = txOut
   }
 
@@ -73,18 +19,58 @@ class Transaction {
     if (!data) {
       data = 'Reward to ' + to
     }
-    const txIn = new TXInput('', -1, data)
-    const txOut = new TXOutput(REWARD, to)
-    return new Transaction('', txIn, txOut)
+    const txIn = { txId: '', vout: -1, scriptSig: data }
+    const txOut = { value: REWARD, scriptPubKey: to }
+    return new Transaction('', [txIn], [txOut])
+  }
+
+  hash() {
+    const {id, vin, vout} = this
+    const hashData = JSON.stringify({id, vin: vin, vout: vout})
+    return crypto.createHash('sha256').update(hashData).digest('hex')
   }
 
   /**
    * @returns {Boolean}
    */
-  isCoinbase() {
-    return this.vin.txId === ''
+  isCoinBase() {
+    return this.id === ''
   }
-  
+
+  /**
+   * @param {Object} txOutput
+   * @param {String} unlockingData
+   * @return {Boolean}
+   */
+  canBeUnlockedWith(txOutput, unlockingData) {
+    return txOutput.scriptPubKey === unlockingData
+  }
+
+  /**
+   * @param {Object} txInput
+   * @param {String} unlockingData
+   * @return {Boolean}
+   */
+  canUnlockOutputWith(txInput, unlockingData) {
+    return txInput.ScriptSig === unlockingData
+  }
+
+  /**
+   * 
+   * @param {Array} prevTXs 
+   * @returns {Boolean}
+   */
+  verify(prevTXs) {
+    if (this.isCoinBase()) {
+      return true
+    }
+
+    return true
+  }
+
+  static deserialize(transaction) {
+    return new Transaction(transaction.id, transaction.vin, transaction.vout)
+  }
 }
 
 module.exports = Transaction

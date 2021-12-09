@@ -52,7 +52,7 @@ class Block {
     const { timestamp, transactions, prevHash, nonce, hash } =
       JSON.parse(data) || {}
     this.timestamp = timestamp
-    this.transactions = transactions
+    this.transactions = Array.isArray(transactions) ? transactions.map(Transaction.deserialize) : []
     this.prevHash = prevHash
     this.nonce = nonce
     this.hash = hash
