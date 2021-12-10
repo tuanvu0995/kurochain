@@ -89,22 +89,6 @@ class BlockChain {
         const tx = block.transactions[i]
         const txId = hexToString(tx.id)
 
-        for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
-          let skip = false
-          const out = tx.vout[outIndex]
-          if (spentTXOs[txId]) {
-            for (let spentOutIndex = 0; spentOutIndex < spentTXOs[txId].length; spentOutIndex++) {
-              if (spentTXOs[txId][spentOutIndex] === outIndex) {
-                skip = true
-                break
-              }
-            }
-          }
-          if (!skip && tx.canBeUnlockedWith(out, address)) {
-            unspentTXs.push(tx)
-          }
-        }
-
         if (!tx.isCoinBase()) {
           tx.vin.map((_in) => {
             if (tx.canUnlockOutputWith(_in, address)) {
@@ -115,6 +99,26 @@ class BlockChain {
               spentTXOs[inTxID].push(_in.vout)
             }
           })
+        }
+
+        for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
+          let skip = false
+          const out = tx.vout[outIndex]
+          if (spentTXOs[txId]) {
+            for (
+              let spentOutIndex = 0;
+              spentOutIndex < spentTXOs[txId].length;
+              spentOutIndex++
+            ) {
+              if (spentTXOs[txId][spentOutIndex] === outIndex) {
+                skip = true
+                break
+              }
+            }
+          }
+          if (!skip && tx.canBeUnlockedWith(out, address)) {
+            unspentTXs.push(tx)
+          }
         }
       }
 
