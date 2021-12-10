@@ -93,12 +93,8 @@ class BlockChain {
           let skip = false
           const out = tx.vout[outIndex]
           if (spentTXOs[txId]) {
-            for (
-              let spendOutIndex = 0;
-              spendOutIndex < spentTXOs[txId].length;
-              spendOutIndex++
-            ) {
-              if (spendOutIndex === outIndex) {
+            for (let spentOutIndex = 0; spentOutIndex < spentTXOs[txId].length; spentOutIndex++) {
+              if (spentTXOs[txId][spentOutIndex] === outIndex) {
                 skip = true
                 break
               }
@@ -161,16 +157,19 @@ class BlockChain {
     for (let txIndex = 0; txIndex < unspentTXs.length; txIndex++) {
       const tx = unspentTXs[txIndex]
       const txId = hexToString(tx.id)
+
       if (!unspentOutputs[txId]) {
         unspentOutputs[txId] = []
       }
 
       for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
         const out = tx.vout[outIndex]
-        accumulated += out.value
-        unspentOutputs[txId].push(txId)
-        if (accumulated >= amount) {
-          break
+        if (tx.canBeUnlockedWith(out, address)) {
+          accumulated += out.value
+          unspentOutputs[txId].push(outIndex)
+          if (accumulated >= amount) {
+            break
+          }
         }
       }
     }
@@ -197,10 +196,11 @@ class BlockChain {
       throw new Error('ERROR: Not enough funds')
     }
 
-    Object.keys(unspentOutputs).map((txId) => {
+    for (let txId in unspentOutputs) {
       const outs = unspentOutputs[txId]
-      inputs = outs.map((_, index) => ({ txId, vout: index, scriptSig: from }))
-    })
+      inputs = outs.map((out) => ({ txId, vout: out, scriptSig: from }))
+    }
+
     outputs.push({ value: amount, scriptPubKey: to })
 
     if (accumulated > amount) {

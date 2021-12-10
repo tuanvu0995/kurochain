@@ -7,7 +7,11 @@
     "test": "jest"
   },
   "dependencies": {
-    "level": "^7.0.1"
+    "clear": "^0.1.0",
+    "colors": "^1.4.0",
+    "figlet": "^1.5.2",
+    "level": "^7.0.1",
+    "minimist": "^1.2.5"
   },
   "devDependencies": {
     "jest": "^27.4.3"
