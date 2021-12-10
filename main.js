@@ -22,7 +22,17 @@ const main = async () => {
       console.log(`Address: ${red(address)} \nBalance: ${green(balance)}`)
       break
     case "print":
-      await cli.printChain()
+      const {start = 0, limit = 10} = argv
+      await cli.printChain(start, limit)
+      break
+    case "transaction":
+      const {id} = argv
+      const tx = await cli.findTX(id)
+      if (!tx) {
+        console.log(red("Transaction not found"))
+      } else {
+        console.log(tx)
+      }
       break
     default:
       cli.greeting()

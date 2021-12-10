@@ -38,24 +38,6 @@ class Transaction {
   }
 
   /**
-   * @param {Object} txOutput
-   * @param {String} unlockingData
-   * @return {Boolean}
-   */
-  canBeUnlockedWith(txOutput, unlockingData) {
-    return txOutput.scriptPubKey === unlockingData
-  }
-
-  /**
-   * @param {Object} txInput
-   * @param {String} unlockingData
-   * @return {Boolean}
-   */
-  canUnlockOutputWith(txInput, unlockingData) {
-    return txInput.scriptSig === unlockingData
-  }
-
-  /**
    *
    * @param {Array} prevTXs
    * @returns {Boolean}

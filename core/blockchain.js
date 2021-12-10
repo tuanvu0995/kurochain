@@ -1,9 +1,15 @@
+const { green } = require('colors')
 const Block = require('./block')
 const Database = require('./database')
 const BlockchainIterator = require('./iterator')
 const ProofOfWork = require('./proof')
 const Transaction = require('./transaction')
 const { hexToString } = require('./utils/hexToString')
+const {
+  canUnlockOutputWith,
+  canBeUnlockedWith,
+  hasInputReferTo,
+} = require('./utils/tx')
 
 class BlockChain {
   constructor() {
@@ -89,9 +95,20 @@ class BlockChain {
         const tx = block.transactions[i]
         const txId = hexToString(tx.id)
 
+        for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
+          let hasRefer = false
+          const out = tx.vout[outIndex]
+          if (spentTXOs[txId]) {
+            hasRefer = hasInputReferTo(spentTXOs[txId], outIndex)
+          }
+          if (!hasRefer && canBeUnlockedWith(out, address)) {
+            unspentTXs.push(tx)
+          }
+        }
+
         if (!tx.isCoinBase()) {
           tx.vin.map((_in) => {
-            if (tx.canUnlockOutputWith(_in, address)) {
+            if (canUnlockOutputWith(_in, address)) {
               const inTxID = hexToString(_in.txId)
               if (!spentTXOs[inTxID]) {
                 spentTXOs[inTxID] = []
@@ -99,26 +116,6 @@ class BlockChain {
               spentTXOs[inTxID].push(_in.vout)
             }
           })
-        }
-
-        for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
-          let skip = false
-          const out = tx.vout[outIndex]
-          if (spentTXOs[txId]) {
-            for (
-              let spentOutIndex = 0;
-              spentOutIndex < spentTXOs[txId].length;
-              spentOutIndex++
-            ) {
-              if (spentTXOs[txId][spentOutIndex] === outIndex) {
-                skip = true
-                break
-              }
-            }
-          }
-          if (!skip && tx.canBeUnlockedWith(out, address)) {
-            unspentTXs.push(tx)
-          }
         }
       }
 
@@ -139,7 +136,7 @@ class BlockChain {
     const unspentTransactions = await this.findUnspentTransactions(address)
     unspentTransactions.map((unspendTx) => {
       unspendTx.vout.map((out) => {
-        if (unspendTx.canBeUnlockedWith(out, address)) {
+        if (canBeUnlockedWith(out, address)) {
           UTXOs.push(out)
         }
       })
@@ -168,13 +165,14 @@ class BlockChain {
 
       for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
         const out = tx.vout[outIndex]
-        if (tx.canBeUnlockedWith(out, address)) {
+        if (canBeUnlockedWith(out, address)) {
           accumulated += out.value
           unspentOutputs[txId].push(outIndex)
-          if (accumulated >= amount) {
-            break
-          }
         }
+      }
+
+      if (accumulated >= amount) {
+        break
       }
     }
 
