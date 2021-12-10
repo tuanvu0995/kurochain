@@ -19,7 +19,7 @@ const main = async () => {
     case 'balance':
       const {address} = argv
       const balance = await cli.getBalance(address)
-      console.log(`Address: ${red(address)} \nBalance: ${green(balance)}`)
+      console.log(`Balance of ${red(address)}: ${green(balance)}`)
       break
     case "print":
       const {start = 0, limit = 10} = argv
