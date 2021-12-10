@@ -1,6 +1,6 @@
 const crypto = require('crypto')
 
-const REWARD = 100
+const REWARD = 1000
 
 class Transaction {
   /**
@@ -15,18 +15,15 @@ class Transaction {
     this.vout = txOut
   }
 
-  static NewCoinbaseTX(to, data) {
-    if (!data) {
-      data = 'Reward to ' + to
-    }
-    const txIn = { txId: '', vout: -1, scriptSig: data }
+  static NewCoinbaseTX(to) {
+    const txIn = { txId: '_', vout: -1, scriptSig: to }
     const txOut = { value: REWARD, scriptPubKey: to }
-    return new Transaction('', [txIn], [txOut])
+    return new Transaction('_', [txIn], [txOut])
   }
 
   hash() {
-    const {id, vin, vout} = this
-    const hashData = JSON.stringify({id, vin: vin, vout: vout})
+    const { id, vin, vout } = this
+    const hashData = JSON.stringify({ id, vin: vin, vout: vout })
     return crypto.createHash('sha256').update(hashData).digest('hex')
   }
 
@@ -34,7 +31,10 @@ class Transaction {
    * @returns {Boolean}
    */
   isCoinBase() {
-    return this.id === ''
+    const { vin } = this
+    return (
+      vin.length === 1 && !vin[0].txId.length && vin[0].vout === -1
+    )
   }
 
   /**
@@ -52,12 +52,12 @@ class Transaction {
    * @return {Boolean}
    */
   canUnlockOutputWith(txInput, unlockingData) {
-    return txInput.ScriptSig === unlockingData
+    return txInput.scriptSig === unlockingData
   }
 
   /**
-   * 
-   * @param {Array} prevTXs 
+   *
+   * @param {Array} prevTXs
    * @returns {Boolean}
    */
   verify(prevTXs) {

@@ -25,7 +25,7 @@ class Commandline {
    */
   async send(from, to, amount) {
     const tx = await this.blockChain.newUTXOTransaction(from, to, amount)
-    await this.blockChain.mineBlock([tx])
+    // await this.blockChain.mineBlock([tx])
     console.log('Success!')
   }
 }
