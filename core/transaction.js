@@ -1,4 +1,6 @@
 const crypto = require('crypto')
+const { hashPubKey } = require('./utils/hash')
+const Wallet = require('./wallet')
 
 const REWARD = 1000
 
@@ -15,9 +17,20 @@ class Transaction {
     this.vout = txOut
   }
 
-  static NewCoinbaseTX(to) {
-    const txIn = { txId: '_', vout: -1, scriptSig: to }
-    const txOut = { value: REWARD, scriptPubKey: to }
+  /**
+   *
+   * @param {Wallet} wallet
+   * @returns {Transaction}
+   */
+  static NewCoinbaseTX(wallet) {
+    const pubKeyHash = hashPubKey(wallet.publicKey)
+    const txIn = {
+      txId: '_',
+      vout: -1,
+      signature: null,
+      pubKey: wallet.publicKey,
+    }
+    const txOut = { value: REWARD, pubKeyHash: pubKeyHash }
     return new Transaction('_', [txIn], [txOut])
   }
 
@@ -32,9 +45,7 @@ class Transaction {
    */
   isCoinBase() {
     const { vin } = this
-    return (
-      vin.length === 1 && !vin[0].txId.length && vin[0].vout === -1
-    )
+    return vin.length === 1 && !vin[0].txId.length && vin[0].vout === -1
   }
 
   /**
@@ -48,6 +59,32 @@ class Transaction {
     }
 
     return true
+  }
+
+  /**
+   *
+   * @param {String} privateKey
+   * @param {Object} prevTXs
+   * @returns
+   */
+  sign(privateKey, prevTXs) {
+    if (this.isCoinBase()) {
+      return
+    }
+
+    const copyTx = { ...this }
+
+    this.vin.map((_in) => {
+      const prevTX = prevTXs[_in.txId]
+    })
+  }
+
+  /**
+   * @returns {Transaction}
+   */
+  trimmedCopy() {
+    const inputs = []
+    const outputs = []
   }
 
   static deserialize(transaction) {
