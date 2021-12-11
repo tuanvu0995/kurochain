@@ -2,7 +2,7 @@
   "name": "kurochain",
   "version": "1.0.0",
   "main": "main.js",
-  "license": "MIT",
+  "license": "0BSD",
   "scripts": {
     "test": "jest"
   },
