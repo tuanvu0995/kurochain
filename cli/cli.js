@@ -55,7 +55,8 @@ class Commandline {
     const fromWallet = this.wlmg.getWallet(from)
 
     const tx = await this.blockChain.newUTXOTransaction(fromWallet, to, amount)
-    await this.blockChain.mineBlock([tx])
+    const rewardTx = Transaction.NewCoinbaseTX(fromWallet)
+    await this.blockChain.mineBlock([tx, rewardTx])
     console.log(
       colors.green(
         `Send ${colors.red(amount)} coin to ${colors.red(to)} success!`
