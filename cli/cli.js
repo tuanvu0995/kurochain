@@ -115,7 +115,7 @@ class Commandline {
   }
 
   async createWallet() {
-    const wallet = await this.walletManager.createWallet()
+    const wallet = await this.wlmg.createWallet()
     console.log(colors.green('New wallet address:', wallet.address))
   }
 

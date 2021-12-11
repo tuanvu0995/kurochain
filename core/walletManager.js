@@ -32,7 +32,7 @@ class WalletManager {
    */
   async createWallet() {
     const key = this.newKeyPair()
-    const wallet = new Wallet(key.pubKey, key.privateKey)
+    const wallet = new Wallet(key.publicKey, key.privateKey)
     this.wallets[wallet.address] = wallet
     await this.saveToDisk()
     return wallet
@@ -45,10 +45,21 @@ class WalletManager {
    * }}
    */
   newKeyPair() {
-    const hash = crypto.createECDH('secp521r1')
-    const pubKey = hash.generateKeys('hex').toString('base64')
-    const privateKey = hash.getPrivateKey('hex').toString('base64')
-    return { pubKey, privateKey }
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('ec', {
+      namedCurve: 'secp521r1',
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'der',
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'der',
+      },
+    })
+    return {
+      publicKey: publicKey.toString('base64'),
+      privateKey: privateKey.toString('base64'),
+    }
   }
 
   async loadFromDisk() {

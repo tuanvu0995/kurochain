@@ -26,8 +26,35 @@ const base58Decode = (data) => {
   return base58.decode(data).toString()
 }
 
+/**
+ * @param {String} privateKey
+ * @returns {PrivateKeyObject}
+ */
+const createPrivateKey = (privateKey) => {
+  return crypto.createPrivateKey({
+    key: Buffer.from(privateKey, 'base64'),
+    format: 'der',
+    type: 'pkcs8',
+  })
+}
+
+/**
+ * 
+ * @param {String} pubKey 
+ * @returns {PrivateKeyObject}
+ */
+const createPublicKey = (pubKey) => {
+  return crypto.createPublicKey({
+    key: Buffer.from(pubKey, 'base64'),
+    format: 'der',
+    type: 'spki',
+  })
+}
+
 module.exports = {
   hashPubKey,
   base58Encode,
   base58Decode,
+  createPrivateKey,
+  createPublicKey
 }
