@@ -45,7 +45,7 @@ class Transaction {
    */
   isCoinBase() {
     const { vin } = this
-    return vin.length === 1 && !vin[0].txId.length && vin[0].vout === -1
+    return vin.length === 1 && vin[0].txId === '_' && vin[0].vout === -1
   }
 
   /**
