@@ -69,7 +69,7 @@ class BlockChain {
     const lastBlockHash = await this.db.get('l')
     if (!lastBlockHash) {
       console.log(
-        yellow("BlockChain doesn't exists. Need to create blockchain first.")
+        yellow("No existing blockchain found. Create one first.")
       )
       return
     }
@@ -83,7 +83,7 @@ class BlockChain {
   async createBlockChain(wallet) {
     const lastBlockHash = await this.db.get('l')
     if (lastBlockHash) {
-      this.tip = lastBlockHash
+      console.log(yellow("Blockchain already exists."))
     } else {
       const coinbase = Transaction.NewCoinbaseTX(wallet)
       const genesis = this.newGenesisBlock(coinbase)
@@ -229,6 +229,7 @@ class BlockChain {
 
     const tx = new Transaction('', inputs, outputs)
     tx.id = tx.hash()
+    await this.syncTransaction(tx, from.privateKey)
 
     return tx
   }
@@ -245,11 +246,11 @@ class BlockChain {
 
     const prevTXs = []
     for (let vinIndex = 0; vinIndex < transaction.vin.length; vinIndex++) {
-      const prevTx = this.findTransaction(transaction.vin[vinIndex].txId)
+      const prevTx = await this.findTransaction(transaction.vin[vinIndex].txId)
       if (!prevTXs) {
         throw new Error('ERROR: Transaction is not found')
       }
-      prevTXs[hexToString(transaction.id)] = prevTx
+      prevTXs[prevTx.id] = prevTx
     }
 
     return transaction.verify(prevTXs)
@@ -266,7 +267,7 @@ class BlockChain {
     while (true) {
       const block = await bci.next()
       for (let txIndex = 0; txIndex < block.transactions.length; txIndex++) {
-        if ([block.transactions[txIndex]].id === id) {
+        if (block.transactions[txIndex].id === id) {
           return block.transactions[txIndex]
         }
       }
@@ -277,6 +278,21 @@ class BlockChain {
     }
 
     return null
+  }
+
+  /**
+   * 
+   * @param {Transaction} tx 
+   * @param {String} privKey 
+   */
+  async syncTransaction(tx, privKey) {
+    const prevTXs = {}
+    for (let vix = 0; vix < tx.vin.length; vix++) {
+      const vin = tx.vin[vix]
+      const prevTX = await this.findTransaction(vin.txId)
+      prevTXs[prevTX.id] = prevTX
+    }
+    tx.sign(privKey, prevTXs)
   }
 }
 

@@ -1,5 +1,4 @@
-const bs58 = require('bs58')
-const { hashPubKey } = require('./utils/hash')
+const { hashPubKey, base58Encode } = require('./utils/hash')
 const { VERSION } = require('./constants')
 const { checksum } = require('./utils/wallet')
 
@@ -8,7 +7,7 @@ class Wallet {
    * @param {String} privateKey
    * @param {String} publicKey
    */
-  constructor(privateKey, publicKey) {
+  constructor(publicKey, privateKey) {
     this.privateKey = privateKey
     this.publicKey = publicKey
     this.address = this.getAddress()
@@ -19,7 +18,7 @@ class Wallet {
     const versionPayload = `${VERSION}${pubKeyHash}`
     const _checksum = checksum(versionPayload)
     const fullPayload = `${versionPayload}${_checksum}`
-    const address = bs58.encode(Buffer.from(fullPayload, 'utf8'))
+    const address = base58Encode(Buffer.from(fullPayload))
     return address
   }
 
@@ -29,7 +28,6 @@ class Wallet {
   getPubKeyHash() {
     return hashPubKey(this.publicKey)
   }
-
 }
 
 module.exports = Wallet

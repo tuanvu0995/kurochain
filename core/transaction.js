@@ -1,5 +1,5 @@
 const crypto = require('crypto')
-const { hashPubKey } = require('./utils/hash')
+const { hashPubKey, createPrivateKey, createPublicKey } = require('./utils/hash')
 const Wallet = require('./wallet')
 
 const REWARD = 1000
@@ -50,19 +50,6 @@ class Transaction {
 
   /**
    *
-   * @param {Array} prevTXs
-   * @returns {Boolean}
-   */
-  verify(prevTXs) {
-    if (this.isCoinBase()) {
-      return true
-    }
-
-    return true
-  }
-
-  /**
-   *
    * @param {String} privateKey
    * @param {Object} prevTXs
    * @returns
@@ -72,19 +59,82 @@ class Transaction {
       return
     }
 
-    const copyTx = { ...this }
+    this.vin.map((_in) => {
+      if (!prevTXs[_in.txId].id) {
+        throw new Error('ERROR: Previous transaction is not correct')
+      }
+    })
+
+    const txCopy = this.trimmedCopy()
+    const privKeyObject = createPrivateKey(privateKey)
+
+    for (let vix = 0; vix < this.vin.length; vix++) {
+      const vin = this.vin[vix]
+      const prevTx = prevTXs[vin.txId]
+
+      txCopy.vin[vix].signature = null
+      txCopy.vin[vix].pubKey = prevTx.vout[vin.vout].pubKeyHash
+      txCopy.id = txCopy.hash()
+      txCopy.vin[vix].pubKey = null
+
+      const sign = crypto.createSign('SHA256')
+      sign.update(txCopy.id)
+      sign.end()
+      const signature = sign.sign(privKeyObject, 'hex')
+
+      this.vin[vix].signature = signature
+    }
+  }
+
+  /**
+   *
+   * @param {Object} prevTXs
+   * @returns {Boolean}
+   */
+  verify(prevTXs) {
+    if (this.isCoinBase()) {
+      return true
+    }
 
     this.vin.map((_in) => {
-      const prevTX = prevTXs[_in.txId]
+      if (!prevTXs[_in.txId].id) {
+        throw new Error('ERROR: Previous transaction is not correct')
+      }
     })
+
+    const txCopy = this.trimmedCopy()
+    for (let vix = 0; vix < this.vin.length; vix++) {
+      const vin = this.vin[vix]
+      const prevTx = prevTXs[vin.txId]
+      txCopy.vin[vix].signature = null
+      txCopy.vin[vix].pubKey = prevTx.vout[vin.vout].pubKeyHash
+      txCopy.id = txCopy.hash()
+      txCopy.vin[vix].pubKey = null
+
+      const verify = crypto.createVerify('SHA256')
+      verify.update(txCopy.id)
+      verify.end()
+
+      const pubKeyBuffer = createPublicKey(vin.pubKey)
+      if (!verify.verify(pubKeyBuffer, vin.signature, 'hex')) {
+        return false
+      }
+    }
+
+    return true
   }
 
   /**
    * @returns {Transaction}
    */
   trimmedCopy() {
-    const inputs = []
-    const outputs = []
+    const inputs = this.vin.map((input) => ({
+      txId: input.txId,
+      vout: input.vout,
+      signature: null,
+      pubKey: null,
+    }))
+    return new Transaction('', inputs, [...this.vout])
   }
 
   static deserialize(transaction) {
