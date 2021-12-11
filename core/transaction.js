@@ -105,6 +105,10 @@ class Transaction {
     const txCopy = this.trimmedCopy()
     for (let vix = 0; vix < this.vin.length; vix++) {
       const vin = this.vin[vix]
+      if (!vin.signature || !vin.pubKey) {
+        return false
+      }
+
       const prevTx = prevTXs[vin.txId]
       txCopy.vin[vix].signature = null
       txCopy.vin[vix].pubKey = prevTx.vout[vin.vout].pubKeyHash
