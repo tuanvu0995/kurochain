@@ -5,6 +5,11 @@ Kurocoin: Node.JS opensource Blockchain
 # Description
 This is blockchain project writing in Node JS was built with purpose is education.
 
+Here is a blockchain on nodejs  version built on top of this project: https://github.com/Jeiwan/blockchain_go .
+This is a project to build blockchain in golang language that is worth studying. If you are new and don't understand how blockchain works, you can check out the tutorial in that project.
+Hopefully with your knowledge, you can develop this project with me and deploy it to production instead of just learning.
+
+
 # Development
 
 # License
