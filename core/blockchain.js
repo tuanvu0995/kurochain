@@ -68,9 +68,7 @@ class BlockChain {
   async initBlockChain() {
     const lastBlockHash = await this.db.get('l')
     if (!lastBlockHash) {
-      console.log(
-        yellow("No existing blockchain found. Create one first.")
-      )
+      console.log(yellow('No existing blockchain found. Create one first.'))
       return
     }
     this.tip = lastBlockHash
@@ -83,7 +81,7 @@ class BlockChain {
   async createBlockChain(wallet) {
     const lastBlockHash = await this.db.get('l')
     if (lastBlockHash) {
-      console.log(yellow("Blockchain already exists."))
+      console.log(yellow('Blockchain already exists.'))
     } else {
       const coinbase = Transaction.NewCoinbaseTX(wallet)
       const genesis = this.newGenesisBlock(coinbase)
@@ -97,13 +95,8 @@ class BlockChain {
     }
   }
 
-  /**
-   *
-   * @param {String} pubKeyHash
-   * @return {Array<Transaction>}
-   */
-  async findUnspentTransactions(pubKeyHash) {
-    const unspentTXs = []
+  async findUTXO() {
+    const UTXO = {}
     const spentTXOs = {}
     const bci = new BlockchainIterator(this.tip, this.db)
     while (true) {
@@ -111,25 +104,25 @@ class BlockChain {
       for (let i = 0; i < block.transactions.length; i++) {
         const tx = block.transactions[i]
         const txId = hexToString(tx.id)
+        if (!UTXO[txId]) {
+          UTXO[txId] = []
+        }
 
         for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
-          const out = tx.vout[outIndex]
-          const spend = spentTXOs[txId]
-          const hasRefer = Boolean(spend) && hasInputReferTo(spend, outIndex)
-          if (!hasRefer && isLockedWithKey(out, pubKeyHash)) {
-            unspentTXs.push(tx)
+          const spent = spentTXOs[txId]
+          const hasRefer = Boolean(spent) && hasInputReferTo(spent, outIndex)
+          if (!hasRefer) {
+            UTXO[txId].push(tx.vout[outIndex])
           }
         }
 
         if (!tx.isCoinBase()) {
           tx.vin.map((_in) => {
-            if (usesKey(_in, pubKeyHash)) {
-              const inTxID = hexToString(_in.txId)
-              if (!spentTXOs[inTxID]) {
-                spentTXOs[inTxID] = []
-              }
-              spentTXOs[inTxID].push(_in.vout)
+            const inTxID = hexToString(_in.txId)
+            if (!spentTXOs[inTxID]) {
+              spentTXOs[inTxID] = []
             }
+            spentTXOs[inTxID].push(_in.vout)
           })
         }
       }
@@ -139,99 +132,7 @@ class BlockChain {
       }
     }
 
-    return unspentTXs
-  }
-
-  /**
-   * @param {String} pubKeyHash
-   * @returns{Array}
-   */
-  async findUTXO(pubKeyHash) {
-    const UTXOs = []
-    const unspentTransactions = await this.findUnspentTransactions(pubKeyHash)
-    unspentTransactions.map((unspendTx) => {
-      unspendTx.vout.map((out) => {
-        if (isLockedWithKey(out, pubKeyHash)) {
-          UTXOs.push(out)
-        }
-      })
-    })
-    return UTXOs
-  }
-
-  /**
-   *
-   * @param {String} pubKeyHash
-   * @param {Number} amount
-   * @returns {{accumulated: Number, unspentOutputs: Object}}
-   */
-  async findSpendableOutputs(pubKeyHash, amount) {
-    const unspentOutputs = {}
-    const unspentTXs = await this.findUnspentTransactions(pubKeyHash)
-    let accumulated = 0
-
-    for (let txIndex = 0; txIndex < unspentTXs.length; txIndex++) {
-      const tx = unspentTXs[txIndex]
-      const txId = hexToString(tx.id)
-
-      if (!unspentOutputs[txId]) {
-        unspentOutputs[txId] = []
-      }
-
-      for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
-        const out = tx.vout[outIndex]
-        if (isLockedWithKey(out, pubKeyHash)) {
-          accumulated += out.value
-          unspentOutputs[txId].push(outIndex)
-        }
-      }
-
-      if (accumulated >= amount) {
-        break
-      }
-    }
-
-    return { accumulated, unspentOutputs }
-  }
-
-  /**
-   *
-   * @param {Wallet} from
-   * @param {address} to
-   * @param {Number} amount
-   * @returns {Transaction}
-   */
-  async newUTXOTransaction(from, to, amount) {
-    let inputs = []
-    const outputs = []
-
-    const { accumulated, unspentOutputs } = await this.findSpendableOutputs(
-      from.getPubKeyHash(),
-      amount
-    )
-    if (accumulated < amount) {
-      throw new Error('ERROR: Not enough funds')
-    }
-
-    for (let txId in unspentOutputs) {
-      const outs = unspentOutputs[txId]
-      inputs = outs.map((out) => ({ txId, vout: out, pubKey: from.publicKey }))
-    }
-    const out = lock({ value: amount }, to)
-    outputs.push(out)
-
-    if (accumulated > amount) {
-      outputs.push({
-        value: accumulated - amount,
-        pubKeyHash: from.getPubKeyHash(),
-      })
-    }
-
-    const tx = new Transaction('', inputs, outputs)
-    tx.id = tx.hash()
-    await this.syncTransaction(tx, from.privateKey)
-
-    return tx
+    return UTXO
   }
 
   /**
@@ -281,11 +182,11 @@ class BlockChain {
   }
 
   /**
-   * 
-   * @param {Transaction} tx 
-   * @param {String} privKey 
+   *
+   * @param {Transaction} tx
+   * @param {String} privKey
    */
-  async syncTransaction(tx, privKey) {
+  async signTransaction(tx, privKey) {
     const prevTXs = {}
     for (let vix = 0; vix < tx.vin.length; vix++) {
       const vin = tx.vin[vix]

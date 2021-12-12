@@ -3,14 +3,16 @@ const BlockChain = require('./core/blockchain')
 const Commandline = require('./cli/cli')
 const { green, red } = require('colors')
 const WalletManager = require('./core/walletManager')
+const UTXOSet = require('./core/utxoset')
 
 const main = async () => {
   const walletManager = new WalletManager()
   await walletManager.loadFromDisk()
   const blockChain = new BlockChain()
   await blockChain.initBlockChain()
+  const utxoSet = new UTXOSet(blockChain)
 
-  const cli = new Commandline(blockChain, walletManager)
+  const cli = new Commandline(blockChain, walletManager, utxoSet)
 
   const argv = minimist(process.argv.slice(2))
   const action = argv['_'][0]
@@ -21,9 +23,16 @@ const main = async () => {
       await cli.send(from, to, amount)
       break
     case 'balance':
-      const { address } = argv
-      const balance = await cli.getBalance(address)
-      console.log(`Balance of ${red(address)}: ${green(balance)}`)
+      const { address, all } = argv
+      if (all) {
+        const balances = await cli.getAllAddressesBalance()
+        console.log(green(`Found ${balances.length} wallets:`))
+        balances.map(balance => console.log(`Balance of ${red(balance.address)}: ${green(balance.balance)}`))
+      } else {
+        const balance = await cli.getBalance(address)
+        console.log(`Balance of ${red(address)}: ${green(balance)}`)
+      }
+     
       break
     case 'print':
       const { start = 0, limit = 10 } = argv
@@ -52,6 +61,12 @@ const main = async () => {
       if (create) {
         await cli.createWallet()
       }
+      break
+    case "reindex":
+      await cli.reindexUTXO()
+      break
+    case "test":
+      await cli.testCmd()
       break
     default:
       cli.greeting()
