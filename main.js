@@ -4,6 +4,7 @@ const Commandline = require('./cli/cli')
 const { green, red } = require('colors')
 const WalletManager = require('./core/walletManager')
 const UTXOSet = require('./core/utxoset')
+const ApiServer = require('./core/server')
 
 const main = async () => {
   const walletManager = new WalletManager()
@@ -27,12 +28,16 @@ const main = async () => {
       if (all) {
         const balances = await cli.getAllAddressesBalance()
         console.log(green(`Found ${balances.length} wallets:`))
-        balances.map(balance => console.log(`Balance of ${red(balance.address)}: ${green(balance.balance)}`))
+        balances.map((balance) =>
+          console.log(
+            `Balance of ${red(balance.address)}: ${green(balance.balance)}`
+          )
+        )
       } else {
         const balance = await cli.getBalance(address)
         console.log(`Balance of ${red(address)}: ${green(balance)}`)
       }
-     
+
       break
     case 'print':
       const { start = 0, limit = 10 } = argv
@@ -62,18 +67,27 @@ const main = async () => {
         await cli.createWallet()
       }
       break
-    case "reindex":
+    case 'reindex':
       await cli.reindexUTXO()
       break
-    case "test":
+    case 'test':
       await cli.testCmd()
       break
+    case 'serve':
+      const { port } = argv
+      return new ApiServer(cli, port)
     default:
       cli.greeting()
   }
 }
 
-main().catch((err) => {
-  console.log(red(err.message))
-  console.log(err)
-})
+main()
+  .then((server) => {
+    if (server) {
+      server.serve()
+    }
+  })
+  .catch((err) => {
+    console.log(red(err.message))
+    console.log(err)
+  })

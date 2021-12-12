@@ -7,6 +7,7 @@ const Transaction = require('../core/transaction')
 const WalletManager = require('../core/walletManager')
 const UTXOSet = require('../core/utxoset')
 const { validateAddress } = require('../core/utils/wallet')
+const Wallet = require('../core/wallet')
 
 class Commandline {
   /**
@@ -35,6 +36,9 @@ class Commandline {
       throw new Error('ERROR: Address is not valid')
     }
     const wallet = this.wlmg.getWallet(address)
+    if (!wallet) {
+      return null
+    }
     const pubKeyHash = wallet.getPubKeyHash()
     const UTXOs = await this.utxoSet.findUTXO(pubKeyHash)
     const balance = UTXOs.map((out) => out.value).reduce((pv, cv) => pv + cv, 0)
@@ -92,6 +96,8 @@ class Commandline {
         `Send ${colors.red(amount)} coin to ${colors.red(to)} success!`
       )
     )
+
+    return tx.id
   }
 
   /**
@@ -145,9 +151,13 @@ class Commandline {
     return null
   }
 
+  /**
+   * @returns {String}
+   */
   async createWallet() {
     const wallet = await this.wlmg.createWallet()
     console.log(colors.green('New wallet address:', wallet.address))
+    return wallet.address
   }
 
   async printWallets() {
@@ -180,6 +190,18 @@ class Commandline {
     console.log('Reindex UTXO stated!')
     await this.utxoSet.reindex()
     console.log(colors.green('Reindex UTXO success!'))
+  }
+
+  /**
+   * @param {String} address
+   * @returns {Wallet}
+   */
+  async getWallet(address) {
+    if (!validateAddress(address)) {
+      log.Panic('ERROR: Address is not valid')
+    }
+    const balance = await this.getBalance(address)
+    return { address, balance }
   }
 }
 
