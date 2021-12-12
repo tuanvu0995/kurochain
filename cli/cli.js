@@ -5,16 +5,19 @@ const BlockChain = require('../core/blockchain')
 const BlockchainIterator = require('../core/iterator')
 const Transaction = require('../core/transaction')
 const WalletManager = require('../core/walletManager')
+const UTXOSet = require('../core/utxoset')
 const { validateAddress } = require('../core/utils/wallet')
 
 class Commandline {
   /**
    * @param {BlockChain} blockChain
    * @param {WalletManager} walletManager
+   * @param {UTXOSet} utxoSet
    */
-  constructor(blockChain, walletManager) {
+  constructor(blockChain, walletManager, utxoSet) {
     this.blockChain = blockChain
     this.wlmg = walletManager
+    this.utxoSet = utxoSet
   }
 
   greeting() {
@@ -29,13 +32,34 @@ class Commandline {
    */
   async getBalance(address) {
     if (!validateAddress(address)) {
-      throw new Error("ERROR: Address is not valid")
+      throw new Error('ERROR: Address is not valid')
     }
     const wallet = this.wlmg.getWallet(address)
     const pubKeyHash = wallet.getPubKeyHash()
-    const UTXOs = await this.blockChain.findUTXO(pubKeyHash)
+    const UTXOs = await this.utxoSet.findUTXO(pubKeyHash)
     const balance = UTXOs.map((out) => out.value).reduce((pv, cv) => pv + cv, 0)
     return balance
+  }
+
+  /**
+   * @returns {Promise<Array>}
+   */
+  async getAllAddressesBalance() {
+    const balances = []
+    for (let address in this.wlmg.wallets) {
+      const pubKeyHash = this.wlmg.wallets[address].getPubKeyHash()
+      const UTXOs = await this.utxoSet.findUTXO(pubKeyHash)
+      const balance = UTXOs.map((out) => out.value).reduce(
+        (pv, cv) => pv + cv,
+        0
+      )
+      balances.push({
+        address,
+        balance,
+      })
+    }
+
+    return balances
   }
 
   /**
@@ -45,18 +69,24 @@ class Commandline {
    */
   async send(from, to, amount) {
     if (!validateAddress(from)) {
-      throw new Error("ERROR: Sender address is not valid")
+      throw new Error('ERROR: Sender address is not valid')
     }
 
     if (!validateAddress(to)) {
-      throw new Error("ERROR: Sender Recipient is not valid")
+      throw new Error('ERROR: Sender Recipient is not valid')
     }
 
     const fromWallet = this.wlmg.getWallet(from)
 
-    const tx = await this.blockChain.newUTXOTransaction(fromWallet, to, amount)
+    const tx = await Transaction.NewUTXOTransaction(
+      fromWallet,
+      to,
+      amount,
+      this.utxoSet
+    )
     const rewardTx = Transaction.NewCoinbaseTX(fromWallet)
-    await this.blockChain.mineBlock([tx, rewardTx])
+    const block = await this.blockChain.mineBlock([tx, rewardTx])
+    await this.utxoSet.update(block)
     console.log(
       colors.green(
         `Send ${colors.red(amount)} coin to ${colors.red(to)} success!`
@@ -124,19 +154,32 @@ class Commandline {
     clear()
     const addresses = this.wlmg.getAddresses()
     console.log(colors.green(`Found ${addresses.length} wallets:`))
-    addresses.map((address, index) => console.log(`${index+1}. ${address}`))
+    addresses.map((address, index) => console.log(`${index + 1}. ${address}`))
   }
 
   /**
-   * @param {String} address 
+   * @param {String} address
    */
   async createBlockChain(address) {
     if (!validateAddress(address)) {
-      log.Panic("ERROR: Address is not valid")
+      log.Panic('ERROR: Address is not valid')
     }
     const wallet = this.wlmg.getWallet(address)
     await this.blockChain.createBlockChain(wallet)
+    this.utxoSet.reindex()
     console.log(colors.green('Create blockchain success!'))
+  }
+
+  async testCmd() {
+    const UTXO = await this.blockChain.findUTXO()
+
+    console.log(UTXO)
+  }
+
+  async reindexUTXO() {
+    console.log('Reindex UTXO stated!')
+    await this.utxoSet.reindex()
+    console.log(colors.green('Reindex UTXO success!'))
   }
 }
 

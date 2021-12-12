@@ -1,5 +1,11 @@
 const crypto = require('crypto')
-const { hashPubKey, createPrivateKey, createPublicKey } = require('./utils/hash')
+const {
+  hashPubKey,
+  createPrivateKey,
+  createPublicKey,
+} = require('./utils/hash')
+const { lock } = require('./utils/tx')
+const UTXOSet = require('./utxoset')
 const Wallet = require('./wallet')
 
 const REWARD = 1000
@@ -31,7 +37,51 @@ class Transaction {
       pubKey: wallet.publicKey,
     }
     const txOut = { value: REWARD, pubKeyHash: pubKeyHash }
-    return new Transaction('_', [txIn], [txOut])
+    const tx = new Transaction('_', [txIn], [txOut])
+    tx.id = tx.hash()
+
+    return tx
+  }
+
+  /**
+   * @param {Wallet} from
+   * @param {address} to
+   * @param {Number} amount
+   * @param {UTXOSet} utxoSet
+   * @returns {Transaction}
+   */
+  static async NewUTXOTransaction(from, to, amount, utxoSet) {
+    let inputs = []
+    const outputs = []
+
+    const { accumulated, unspentOutputs } = await utxoSet.findSpendableOutputs(
+      from.getPubKeyHash(),
+      amount
+    )
+
+    if (accumulated < amount) {
+      throw new Error('ERROR: Not enough funds')
+    }
+
+    for (let txId in unspentOutputs) {
+      const outs = unspentOutputs[txId]
+      inputs = outs.map((out) => ({ txId, vout: out, pubKey: from.publicKey }))
+    }
+    const out = lock({ value: amount }, to)
+    outputs.push(out)
+
+    if (accumulated > amount) {
+      outputs.push({
+        value: accumulated - amount,
+        pubKeyHash: from.getPubKeyHash(),
+      })
+    }
+
+    const tx = new Transaction('', inputs, outputs)
+    tx.id = tx.hash()
+    await utxoSet.blockChain.signTransaction(tx, from.privateKey)
+
+    return tx
   }
 
   hash() {

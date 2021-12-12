@@ -20,6 +20,23 @@ class Database {
       return null
     }
   }
+
+  async delete(key) {
+    try {
+      await this.db.del(key)
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+
+  async clear() {
+    await this.db.clear()
+  }
+
+  iterator() {
+    return this.db.iterator()
+  }
 }
 
 module.exports = Database
