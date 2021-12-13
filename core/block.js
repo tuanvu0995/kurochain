@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const MerkleTree = require('./merkletree')
 const Transaction = require('./transaction')
 
 class Block {
@@ -23,12 +24,14 @@ class Block {
    * @returns {String}
    */
   hashTransactions() {
-    const txHashes = []
-    this.transactions.map((transaction) => {
-      txHashes.push(transaction.id)
+    const transactions = []
+    this.transactions.map((tx) => {
+      transactions.push(tx.serialize())
     })
 
-    return crypto.createHash('sha256').update(txHashes.join()).digest('hex')
+    const mTree = MerkleTree.NewMerkleTree(transactions)
+
+    return mTree.rootNode.data
   }
 
   /**
@@ -52,7 +55,9 @@ class Block {
     const { timestamp, transactions, prevHash, nonce, hash } =
       JSON.parse(data) || {}
     this.timestamp = timestamp
-    this.transactions = Array.isArray(transactions) ? transactions.map(Transaction.deserialize) : []
+    this.transactions = Array.isArray(transactions)
+      ? transactions.map(Transaction.deserialize)
+      : []
     this.prevHash = prevHash
     this.nonce = nonce
     this.hash = hash

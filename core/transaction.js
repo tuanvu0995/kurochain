@@ -194,7 +194,17 @@ class Transaction {
   }
 
   static deserialize(transaction) {
-    return new Transaction(transaction.id, transaction.vin, transaction.vout)
+    const vin = JSON.parse(transaction.vin)
+    const vout = JSON.parse(transaction.vout)
+    return new Transaction(transaction.id, vin, vout)
+  }
+
+  serialize() {
+    return JSON.stringify({
+      id: this.id,
+      vin: JSON.stringify(this.vin),
+      vout: JSON.stringify(this.vout),
+    })
   }
 }
 
