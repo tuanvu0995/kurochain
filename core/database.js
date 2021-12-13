@@ -33,7 +33,11 @@ class Database {
   }
 
   async clear() {
-    await this.db.clear()
+    try {
+      await this.db.clear()
+    } catch(err) {
+      console.log(err)
+    }
   }
 
   iterator() {
