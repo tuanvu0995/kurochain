@@ -88,7 +88,7 @@ class Commandline {
       amount,
       this.utxoSet
     )
-    const rewardTx = Transaction.NewCoinbaseTX(fromWallet)
+    const rewardTx = Transaction.NewCoinbaseTX(fromWallet, true)
     const block = await this.blockChain.mineBlock([tx, rewardTx])
     await this.utxoSet.update(block)
     console.log(
@@ -175,9 +175,10 @@ class Commandline {
       log.Panic('ERROR: Address is not valid')
     }
     const wallet = this.wlmg.getWallet(address)
-    await this.blockChain.createBlockChain(wallet)
-    this.utxoSet.reindex()
-    console.log(colors.green('Create blockchain success!'))
+    const result = await this.blockChain.createBlockChain(wallet)
+    if (result) {
+      this.utxoSet.reindex()
+    }
   }
 
   async testCmd() {

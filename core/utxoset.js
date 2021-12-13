@@ -31,21 +31,21 @@ class UTXOSet {
       const tx = block.transactions[txIx]
       if (!tx.isCoinBase()) {
         for (let vinIx = 0; vinIx < tx.vin.length; vinIx++) {
-          const _in = tx.vin[vinTx]
+          const _in = tx.vin[vinIx]
           const updatedOuts = []
           const outStr = await this.db.get(_in.txId)
           const outs = JSON.parse(outStr)
 
           outs.map((out, index) => {
-            if (index !== vin.vout) {
+            if (index !== _in.vout) {
               updatedOuts.push(out)
             }
           })
 
           if (!updatedOuts.length) {
-            await this.db.delete(vin.txId)
+            await this.db.delete(_in.txId)
           } else {
-            await this.db.put(vin.txId, JSON.stringify(updatedOuts))
+            await this.db.put(_in.txId, JSON.stringify(updatedOuts))
           }
         }
       }
@@ -68,11 +68,11 @@ class UTXOSet {
 
     for await (const [txId, vout] of this.db.iterator()) {
       const ouputs = JSON.parse(vout)
-      if (!unspentOutputs[txId]) {
-        unspentOutputs[txId] = []
-      }
       ouputs.map((out, index) => {
         if (isLockedWithKey(out, pubKeyHash) && accumulated < amount) {
+          if (!unspentOutputs[txId]) {
+            unspentOutputs[txId] = []
+          }
           accumulated += out.value
           unspentOutputs[txId].push(index)
         }

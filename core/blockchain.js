@@ -1,16 +1,10 @@
-const { yellow } = require('colors')
+const { yellow, green } = require('colors')
 const Block = require('./block')
 const Database = require('./database')
 const BlockchainIterator = require('./iterator')
 const ProofOfWork = require('./proof')
 const Transaction = require('./transaction')
-const { hexToString } = require('./utils/hexToString')
-const {
-  hasInputReferTo,
-  usesKey,
-  isLockedWithKey,
-  lock,
-} = require('./utils/tx')
+const { hasInputReferTo } = require('./utils/tx')
 const Wallet = require('./wallet')
 
 class BlockChain {
@@ -77,11 +71,13 @@ class BlockChain {
   /**
    *
    * @param {Wallet} wallet
+   * @returns {Promise<Boolean>}
    */
   async createBlockChain(wallet) {
     const lastBlockHash = await this.db.get('l')
     if (lastBlockHash) {
       console.log(yellow('Blockchain already exists.'))
+      return false
     } else {
       const coinbase = Transaction.NewCoinbaseTX(wallet)
       const genesis = this.newGenesisBlock(coinbase)
@@ -91,7 +87,9 @@ class BlockChain {
       genesis.hash = hash
       await this.db.put(genesis.hash, genesis.serialize())
       await this.db.put('l', genesis.hash)
-      this.tip = genesis
+      this.tip = genesis.hash
+      console.log(green('Create blockchain success!'))
+      return true
     }
   }
 
@@ -103,22 +101,22 @@ class BlockChain {
       const block = await bci.next()
       for (let i = 0; i < block.transactions.length; i++) {
         const tx = block.transactions[i]
-        const txId = hexToString(tx.id)
-        if (!UTXO[txId]) {
-          UTXO[txId] = []
-        }
-
+        const txId = tx.id
+        
+        const spent = spentTXOs[txId]
         for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
-          const spent = spentTXOs[txId]
           const hasRefer = Boolean(spent) && hasInputReferTo(spent, outIndex)
           if (!hasRefer) {
+            if (!UTXO[txId]) {
+              UTXO[txId] = []
+            }
             UTXO[txId].push(tx.vout[outIndex])
           }
         }
 
         if (!tx.isCoinBase()) {
           tx.vin.map((_in) => {
-            const inTxID = hexToString(_in.txId)
+            const inTxID = _in.txId
             if (!spentTXOs[inTxID]) {
               spentTXOs[inTxID] = []
             }
