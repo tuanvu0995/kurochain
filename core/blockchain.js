@@ -8,8 +8,9 @@ const { hasInputReferTo } = require('./utils/tx')
 const Wallet = require('./wallet')
 
 class BlockChain {
-  constructor() {
-    this.db = new Database('./tmp/block')
+  constructor(config) {
+    const tmpPath = config.tmp || './tmp'
+    this.db = new Database(tmpPath + '/block')
     this.tip = null
   }
 
@@ -37,7 +38,8 @@ class BlockChain {
    */
   async addBlock(transactions) {
     const lastBlockHash = await this.db.get('l')
-    const block = new Block(transactions, lastBlockHash)
+    const lastHeight = await this.getBestHeight()
+    const block = new Block(transactions, lastBlockHash, lastHeight + 1)
     const pow = new ProofOfWork(block)
     const { nonce, hash } = pow.run()
     block.nonce = nonce
@@ -56,7 +58,7 @@ class BlockChain {
    * @returns {Block}
    */
   newGenesisBlock(coinbase) {
-    return new Block([coinbase], '')
+    return new Block([coinbase], '', 0)
   }
 
   async initBlockChain() {
@@ -102,7 +104,7 @@ class BlockChain {
       for (let i = 0; i < block.transactions.length; i++) {
         const tx = block.transactions[i]
         const txId = tx.id
-        
+
         const spent = spentTXOs[txId]
         for (let outIndex = 0; outIndex < tx.vout.length; outIndex++) {
           const hasRefer = Boolean(spent) && hasInputReferTo(spent, outIndex)
@@ -192,6 +194,41 @@ class BlockChain {
       prevTXs[prevTX.id] = prevTX
     }
     tx.sign(privKey, prevTXs)
+  }
+
+  /**
+   * @returns {Promise<Block>}
+   */
+  async getLastBlock() {
+    const iterator = new BlockchainIterator(this.tip, this.db)
+    const lastBlock = await iterator.next()
+    return lastBlock
+  }
+
+  /**
+   * @returns {Promise<Number>}
+   */
+  async getBestHeight() {
+    const lastBlock = await this.getLastBlock()
+    return lastBlock.height || 0
+  }
+
+  /**
+   * @returns {Array<String>}
+   */
+  async getBlockHashes() {
+    const bci = new BlockchainIterator(this.tip, this.db)
+    const hashes = []
+    while (true) {
+      const block = await bci.next()
+      hashes.push(block.hash)
+
+      if (!block.prevHash.length) {
+        break
+      }
+    }
+
+    return hashes
   }
 }
 

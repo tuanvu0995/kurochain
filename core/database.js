@@ -3,7 +3,7 @@ const fs = require('fs')
 
 class Database {
   constructor(path) {
-    this.createDirIfNotExists()
+    this.createDirIfNotExists(path)
     this.db = level(path, { valueEncoding: 'json', createIfMissing: true })
   }
 
@@ -44,9 +44,12 @@ class Database {
     return this.db.iterator()
   }
 
-  createDirIfNotExists() {
-    if (!fs.existsSync('./tmp')) {
-      fs.mkdirSync('./tmp')
+  /**
+   * @param {String} path 
+   */
+  createDirIfNotExists(path) {
+    if (!fs.existsSync(path)) {
+      fs.mkdirSync(path, { recursive: true })
     }
   }
 }

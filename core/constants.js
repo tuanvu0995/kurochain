@@ -7,10 +7,17 @@ const ADDRESS_CHECKSUM_LENGTH = 8
 const DEFAULT_ADDRESS = 'localhost'
 const DEFAULT_PORT = 3003
 
+const NODE_ROLES = {
+    MINER: 'miner',
+    FULL: 'full',
+    SPV: 'SPV'
+}
+
 
 module.exports = {
     VERSION,
     ADDRESS_CHECKSUM_LENGTH,
     DEFAULT_ADDRESS,
-    DEFAULT_PORT
+    DEFAULT_PORT,
+    NODE_ROLES
 }

@@ -3,8 +3,9 @@ const Database = require('./database')
 const Wallet = require('./wallet')
 
 class WalletManager {
-  constructor() {
-    this.db = new Database('./tmp/wallet')
+  constructor(config) {
+    const tmpPath = config.tmp || './tmp'
+    this.db = new Database(tmpPath + '/wallet')
     this.wallets = {}
   }
 

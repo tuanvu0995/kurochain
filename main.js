@@ -4,19 +4,28 @@ const Commandline = require('./cli/cli')
 const { green, red } = require('colors')
 const WalletManager = require('./core/walletManager')
 const UTXOSet = require('./core/utxoset')
-const ApiServer = require('./core/server')
+const Server = require('./core/server')
+const Client = require('./core/client')
 
 const main = async () => {
-  const walletManager = new WalletManager()
+  const argv = minimist(process.argv.slice(2))
+  const action = argv['_'][0]
+
+  const config = {}
+  if (argv.tmp) {
+    config.tmp = argv.tmp
+  }
+
+  const walletManager = new WalletManager(config)
   await walletManager.loadFromDisk()
-  const blockChain = new BlockChain()
+  const blockChain = new BlockChain(config)
   await blockChain.initBlockChain()
-  const utxoSet = new UTXOSet(blockChain)
+  const utxoSet = new UTXOSet(blockChain, config)
 
   const cli = new Commandline(blockChain, walletManager, utxoSet)
 
-  const argv = minimist(process.argv.slice(2))
-  const action = argv['_'][0]
+
+
 
   switch (action) {
     case 'send':
@@ -75,18 +84,18 @@ const main = async () => {
       break
     case 'serve':
       const { port } = argv
-      return new ApiServer(cli, port)
+      const server = new Server(cli, port)
+      return { server }
+    case 'client':
+      const client = new Client(cli, argv.address)
+      return { client }
     default:
       cli.greeting()
   }
 }
 
 main()
-  .then((server) => {
-    if (server) {
-      server.serve()
-    }
-  })
+  .then((context) => {})
   .catch((err) => {
     console.log(red(err.message))
     console.log(err)

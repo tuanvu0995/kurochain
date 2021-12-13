@@ -1,66 +1,78 @@
-const { DEFAULT_PORT, DEFAULT_ADDRESS } = require('./constants')
-const express = require('express')
-const { green } = require('colors')
+const net = require('net')
 const Commandline = require('../cli/cli')
+const { cmdToArray } = require('./utils/cmd')
 
-class ApiServer {
+const commandLength = 12
+
+const nodeAddress = 'localhost'
+const nodeVersion = 1
+
+const knownNodes = ['localhost:3001']
+const mempool = []
+
+class Server {
   /**
-   * @param {Commandline} cli
+   * @param {Commandline}
    * @param {Number} port
-   * @param {String} address
    */
-  constructor(cli, port = DEFAULT_PORT, address = DEFAULT_ADDRESS) {
+  constructor(cli, port = 3000) {
     this.cli = cli
     this.port = port
-    this.address = address
-
-    this.app = express()
-    this.app.use(express.json())
-    this.app.use(express.urlencoded({ extended: true }))
+    this.createServer(port)
   }
 
-  serve() {
-    this.app.listen(this.port, () => {
-      console.log(
-        green(`API Server running at http://${this.address}:${this.port}`)
-      )
+  createServer() {
+    this.server = net.createServer((socket) => {
+      socket.on('data', (data) => this.hanlderCmd(socket, data))
     })
+    this.server.listen(this.port, nodeAddress)
+    console.log('Server started!')
+  }
 
-    this.app.get('/', (req, res) => {
-      res.send('Kurocoin API')
-    })
+  /**
+   * @param {net.Socket} socket
+   * @param {Buffer} data
+   */
+  async hanlderCmd(socket, data) {
+    const cmdStr = data.toString()
+    console.log('Clent send: ', data.toString())
+    const cmdArr = cmdToArray(cmdStr)
 
-    this.app.get('/ping', (req, res) => {
-      res.send('Ping')
-    })
+    if (!cmdArr.length) {
+      return socket.write('ERROR: Invalid command')
+    }
+    console.log(cmdArr)
 
-    this.app.get('/wallet', async (req, res) => {
-      const wallets = await this.cli.getAllAddressesBalance()
-      res.json({ wallets })
-    })
+    switch (cmdArr[0]) {
+      case 'version':
+        this.sendVersion(socket)
+        break
+      case 'getblock':
+        console.log('get block')
+        await this.handleGetBlock(socket)
+        break
+      default:
+        socket.write('ERROR: Unknown command!')
+    }
+  }
 
-    this.app.get('/wallet/:address', async (req, res) => {
-      const { address } = req.params
-      const wallet = await this.cli.getWallet(address)
-      res.json({ wallet })
-    })
+  /**
+   * @param {net.Socket} socket
+   * @param {String} address
+   */
+   async sendVersion(socket) {
+    const bestHeight = await this.cli.blockChain.getBestHeight()
+    const payload = `reversion:${nodeVersion}:${bestHeight}:${nodeAddress}`
+    socket.write(payload)
+  }
 
-    this.app.post('/send', async (req, res) => {
-      const { from, to, amount } = req.body
-      const transactionId = await this.cli.send(from, to, Number(amount))
-      res.json({
-        transactionId,
-      })
-    })
-
-    this.app.post('/wallet', async (req, res) => {
-      const address = await this.cli.createWallet()
-      res.json({
-        address,
-        balance: 0,
-      })
-    })
+  /**
+   * @param {net.Socket} socket
+   */
+  async handleGetBlock(socket) {
+    const blockHashes = await this.cli.blockChain.getBlockHashes()
+    socket.write('regetblock:' + blockHashes.join('|'))
   }
 }
 
-module.exports = ApiServer
+module.exports = Server

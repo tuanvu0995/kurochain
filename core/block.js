@@ -6,8 +6,9 @@ class Block {
   /**
    * @param {Array<Transaction>} transactions
    * @param {String} prevHash
+   * @param {Number} height
    */
-  constructor(transactions, prevHash) {
+  constructor(transactions, prevHash, height) {
     this.timestamp = new Date().getTime()
 
     /**
@@ -18,6 +19,7 @@ class Block {
     this.prevHash = prevHash
     this.nonce = 0
     this.hash = null
+    this.height = height
   }
 
   /**
@@ -44,6 +46,7 @@ class Block {
       prevHash: this.prevHash,
       nonce: this.nonce,
       hash: this.hash,
+      height: this.height
     })
   }
 
@@ -52,7 +55,7 @@ class Block {
    * @param {String} data
    */
   deserialize(data) {
-    const { timestamp, transactions, prevHash, nonce, hash } =
+    const { timestamp, transactions, prevHash, nonce, hash, height } =
       JSON.parse(data) || {}
     this.timestamp = timestamp
     this.transactions = Array.isArray(transactions)
@@ -61,6 +64,7 @@ class Block {
     this.prevHash = prevHash
     this.nonce = nonce
     this.hash = hash
+    this.height = height
   }
 }
 

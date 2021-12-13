@@ -7,10 +7,12 @@ class UTXOSet {
   /**
    *
    * @param {BlockChain} blockChain
+   * @param {Object} config
    */
-  constructor(blockChain) {
+  constructor(blockChain, config) {
+    const tmpPath = config.tmp || './tmp'
+    this.db = new Database(tmpPath + '/uxto')
     this.blockChain = blockChain
-    this.db = new Database('./tmp/uxto')
   }
 
   async reindex() {
@@ -51,7 +53,7 @@ class UTXOSet {
       }
 
       const newOutputs = []
-      tx.vout.map(out => newOutputs.push(out))
+      tx.vout.map((out) => newOutputs.push(out))
       this.db.put(tx.id, JSON.stringify(newOutputs))
     }
   }
