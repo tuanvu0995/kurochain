@@ -8,7 +8,8 @@ const { lock } = require('./utils/tx')
 const UTXOSet = require('./utxoset')
 const Wallet = require('./wallet')
 
-const REWARD = 1000
+const REWARD = 1000000
+const MINING_REWARD = 10
 
 class Transaction {
   /**
@@ -26,9 +27,10 @@ class Transaction {
   /**
    *
    * @param {Wallet} wallet
+   * @param {Boolean} isMining
    * @returns {Transaction}
    */
-  static NewCoinbaseTX(wallet) {
+  static NewCoinbaseTX(wallet, isMining = false) {
     const pubKeyHash = hashPubKey(wallet.publicKey)
     const txIn = {
       txId: '_',
@@ -36,7 +38,7 @@ class Transaction {
       signature: null,
       pubKey: wallet.publicKey,
     }
-    const txOut = { value: REWARD, pubKeyHash: pubKeyHash }
+    const txOut = { value: isMining ? MINING_REWARD : REWARD, pubKeyHash: pubKeyHash }
     const tx = new Transaction('_', [txIn], [txOut])
     tx.id = tx.hash()
 

@@ -57,8 +57,8 @@ class WalletManager {
       },
     })
     return {
-      publicKey: publicKey.toString('base64'),
-      privateKey: privateKey.toString('base64'),
+      publicKey: publicKey.toString('hex'),
+      privateKey: privateKey.toString('hex'),
     }
   }
 
@@ -69,14 +69,15 @@ class WalletManager {
     }
 
     const wallets = JSON.parse(walletData)
-    for (let key in wallets) {
-      const wallet = new Wallet(wallets[key].privateKey, wallets[key].publicKey)
+    wallets.map(wl => {
+      const wallet = new Wallet(wl.publicKey, wl.privateKey)
       this.wallets[wallet.address] = wallet
-    }
+    })
   }
 
   async saveToDisk() {
-    await this.db.put('wallets', JSON.stringify(this.wallets))
+    const wallets = Object.keys(this.wallets).map(key => ({publicKey: this.wallets[key].publicKey, privateKey: this.wallets[key].privateKey}))
+    await this.db.put('wallets', JSON.stringify(wallets))
   }
 }
 

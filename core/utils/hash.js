@@ -32,7 +32,7 @@ const base58Decode = (data) => {
  */
 const createPrivateKey = (privateKey) => {
   return crypto.createPrivateKey({
-    key: Buffer.from(privateKey, 'base64'),
+    key: Buffer.from(privateKey, 'hex'),
     format: 'der',
     type: 'pkcs8',
   })
@@ -45,7 +45,7 @@ const createPrivateKey = (privateKey) => {
  */
 const createPublicKey = (pubKey) => {
   return crypto.createPublicKey({
-    key: Buffer.from(pubKey, 'base64'),
+    key: Buffer.from(pubKey, 'hex'),
     format: 'der',
     type: 'spki',
   })

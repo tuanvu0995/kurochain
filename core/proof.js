@@ -1,6 +1,6 @@
 const crypto = require('crypto')
 
-const Difficulty = 12
+const Difficulty = 20
 
 class ProofOfWork {
   constructor(block) {

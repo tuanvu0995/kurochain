@@ -1,7 +1,9 @@
 const level = require('level')
+const fs = require('fs')
 
 class Database {
   constructor(path) {
+    this.createDirIfNotExists()
     this.db = level(path, { valueEncoding: 'json', createIfMissing: true })
   }
 
@@ -31,11 +33,21 @@ class Database {
   }
 
   async clear() {
-    await this.db.clear()
+    try {
+      await this.db.clear()
+    } catch(err) {
+      console.log(err)
+    }
   }
 
   iterator() {
     return this.db.iterator()
+  }
+
+  createDirIfNotExists() {
+    if (!fs.existsSync('./tmp')) {
+      fs.mkdirSync('./tmp')
+    }
   }
 }
 
