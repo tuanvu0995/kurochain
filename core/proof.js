@@ -1,6 +1,6 @@
 const crypto = require('crypto')
 
-const Difficulty = 20
+const Difficulty = 2
 
 class ProofOfWork {
   constructor(block) {
@@ -14,7 +14,9 @@ class ProofOfWork {
    */
   initNonce(nonce) {
     const { block, toHex } = this
-    const data = `${block.prevHash}|${JSON.stringify(block.hashTransactions())}|${toHex(nonce)}}`
+    const data = `${block.prevHash}|${JSON.stringify(
+      block.hashTransactions()
+    )}|${toHex(nonce)}}`
     return data
   }
 
@@ -24,14 +26,10 @@ class ProofOfWork {
   run() {
     let hash = ''
     let nonce = 0
-    while (nonce < Number.MAX_SAFE_INTEGER) {
+    while (hash.substring(0, Difficulty) !== Array(Difficulty + 1).join('0')) {
       const data = this.initNonce(nonce)
       hash = crypto.createHash('sha256').update(data).digest('hex')
-      if (hash.slice(-3) === '000') {
-        break
-      } else {
-        nonce++
-      }
+      nonce++
     }
     return { nonce, hash }
   }
@@ -46,8 +44,8 @@ class ProofOfWork {
   }
 
   /**
-   * 
-   * @param {Number} number 
+   *
+   * @param {Number} number
    * @return {String}
    */
   toHex(number) {
