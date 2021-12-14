@@ -1,4 +1,4 @@
-Kurocoin: Node.JS opensource Blockchain
+Kurocoin: Node.JS Blockchain
 =================================
 [![CircleCI](https://circleci.com/gh/tuanvu0995/kurochain/tree/main.svg?style=svg)](https://circleci.com/gh/tuanvu0995/kurochain/tree/main)
 
