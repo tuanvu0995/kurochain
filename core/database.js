@@ -35,17 +35,17 @@ class Database {
   async clear() {
     try {
       await this.db.clear()
-    } catch(err) {
+    } catch (err) {
       console.log(err)
     }
   }
 
-  iterator() {
-    return this.db.iterator()
+  iterator(limit, page) {
+    return this.db.iterator({ limit, lt: page })
   }
 
   /**
-   * @param {String} path 
+   * @param {String} path
    */
   createDirIfNotExists(path) {
     if (!fs.existsSync(path)) {

@@ -182,9 +182,13 @@ class Commandline {
   }
 
   async testCmd() {
-    const UTXO = await this.blockChain.findUTXO()
-
-    console.log(UTXO)
+    const from = 'bSLj8ZxGpewaHXsqPgm3pytn6phpHDHSAfrsmjkVfS9vyB2xr8vkbaN7X7Yu3qCh7b5q'
+    const to = 'bSNXom4CBbGuDkmuxSHn3MDasyrsxNjr7DC3gwjEaQ868jGS78NNoTgyfuR6RSLqz7QY'
+    const amount = 100
+    for (let i = 0; i < 10000; i++) {
+      console.log(`Index ${i+1}:`)
+      await this.send(from, to, amount)
+    }
   }
 
   async reindexUTXO() {
