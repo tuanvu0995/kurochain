@@ -81,8 +81,8 @@ const main = async () => {
       await cli.testCmd()
       break
     case 'serve':
-      const { port } = argv
-      const server = new Node(cli, {port})
+      const { port, central } = argv
+      const server = new Node(cli, {port, central})
       return { server }
     default:
       cli.greeting()

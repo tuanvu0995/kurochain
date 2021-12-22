@@ -13,7 +13,6 @@ const blocksInTransit = []
 
 class Node {
   /**
-   *
    * @param {Commandline} cli
    * @param {Object} config
    */
@@ -22,8 +21,12 @@ class Node {
     const tmpPath = config.tmp || './tmp'
     this.db = new Database(tmpPath + '/node')
 
+    this.central = Boolean(config?.central)
+
     this.serve()
-    this.connect()
+    if (!this.central) {
+      this.connect()
+    }
   }
 
   serve() {
