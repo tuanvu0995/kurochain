@@ -18,6 +18,10 @@ class Node {
    */
   constructor(cli, config) {
     this.cli = cli
+    this.config = config
+    if (!this.config.port) {
+      this.config.port = NODE_PORT
+    }
     const tmpPath = config.tmp || './tmp'
     this.db = new Database(tmpPath + '/node')
 
@@ -33,16 +37,14 @@ class Node {
     this.server = net.createServer((socket) => {
       socket.on('data', (data) => this.hanlderCmd(socket, data))
     })
-    this.server.listen(this.config.port || NODE_PORT, NODE_ADDRESS)
+    this.server.listen(this.config.port, NODE_ADDRESS)
     console.log('Node started!')
   }
 
-  /**
-   * @param {String} address
-   */
-  connect(address) {
+  connect() {
     const socket = new net.Socket()
-    socket.connect(this.port, gitaddress, () => {
+    const [address, port] = knowNodes[0].split(':')
+    socket.connect(port, address, () => {
       console.log('Connected to server')
       this.sendVersionCmd()
     })
@@ -67,6 +69,10 @@ class Node {
 
     switch (cmdArr[0]) {
       case 'version':
+        const senderAddress = cmdArr[3] + ':' + cmdArr[4]
+        if (!knowNodes.includes(senderAddress)) {
+          knowNodes.push(senderAddress)
+        }
         const bestHeight = Number(cmdArr[2])
         const myBestHeight = await this.cli.blockChain.getBestHeight()
         if (myBestHeight > bestHeight) {
@@ -105,7 +111,7 @@ class Node {
    */
   async sendVersionCmd(socket) {
     const bestHeight = await this.cli.blockChain.getBestHeight()
-    const payload = `version:${NODE_VERSION}:${bestHeight}:${NODE_ADDRESS}`
+    const payload = `version:${NODE_VERSION}:${bestHeight}:${NODE_ADDRESS}:${this.config.port}`
     socket.write(payload)
   }
 
