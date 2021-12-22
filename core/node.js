@@ -166,7 +166,7 @@ class Node {
   async receiveGetBlock(socket, blockHashes, startHeight, endHeight) {
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
-    if (startHeight > endHeight) {
+    if (startHeight < endHeight) {
       await this.sendGetBlockCmd(socket, startHeight + 20, endHeight)
     } else {
       this.startGetBlockData(socket)

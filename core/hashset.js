@@ -54,15 +54,15 @@ class HashSet {
     const limit = 20
     const hashes = []
     let currentHeight = startHeight
-    const stopHeight = currentHeight - limit
+    const stopHeight = currentHeight + limit
     for await (const [height, hash] of this.db.iterator()) {
       const blockHeight = Number(height)
-      if (blockHeight <= startHeight) {
+      if (blockHeight <= endHeight) {
         hashes.push(hash)
       }
       currentHeight = blockHeight
 
-      if (currentHeight <= stopHeight || currentHeight <= endHeight) {
+      if (currentHeight >= stopHeight || currentHeight >= endHeight) {
         break
       }
     }
