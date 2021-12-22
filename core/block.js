@@ -1,4 +1,3 @@
-const crypto = require('crypto')
 const MerkleTree = require('./merkletree')
 const Transaction = require('./transaction')
 

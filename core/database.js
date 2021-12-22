@@ -40,8 +40,8 @@ class Database {
     }
   }
 
-  iterator(limit, page) {
-    return this.db.iterator({ limit, lt: page })
+  iterator(limit) {
+    return this.db.iterator({ limit })
   }
 
   /**

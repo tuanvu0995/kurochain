@@ -4,8 +4,8 @@ const Commandline = require('./cli/cli')
 const { green, red } = require('colors')
 const WalletManager = require('./core/walletManager')
 const UTXOSet = require('./core/utxoset')
-const Server = require('./core/server')
-const Client = require('./core/client')
+const Node = require('./core/node')
+const HashSet = require('./core/hashset')
 
 const main = async () => {
   const argv = minimist(process.argv.slice(2))
@@ -21,11 +21,9 @@ const main = async () => {
   const blockChain = new BlockChain(config)
   await blockChain.initBlockChain()
   const utxoSet = new UTXOSet(blockChain, config)
+  const hashSet = new HashSet(blockChain, config)
 
-  const cli = new Commandline(blockChain, walletManager, utxoSet)
-
-
-
+  const cli = new Commandline(blockChain, walletManager, utxoSet, hashSet)
 
   switch (action) {
     case 'send':
@@ -84,11 +82,8 @@ const main = async () => {
       break
     case 'serve':
       const { port } = argv
-      const server = new Server(cli, port)
+      const server = new Node(cli, {port})
       return { server }
-    case 'client':
-      const client = new Client(cli, argv.address)
-      return { client }
     default:
       cli.greeting()
   }

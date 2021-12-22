@@ -14,6 +14,10 @@ class BlockChain {
     this.tip = null
   }
 
+  static NewInterator() {
+    return new BlockchainIterator(this.tip, this.db)
+  }
+
   /**
    *
    * @param {Array<Transaction>} transactions
@@ -214,21 +218,24 @@ class BlockChain {
   }
 
   /**
-   * @returns {Array<String>}
+   * @param {Block} block
    */
-  async getBlockHashes() {
-    const bci = new BlockchainIterator(this.tip, this.db)
-    const hashes = []
-    while (true) {
-      const block = await bci.next()
-      hashes.push(block.hash)
+  async saveBlock(block) {
+    await this.db.put(block.hash, block.serialize())
+    await this.db.put('l', block.hash)
 
-      if (!block.prevHash.length) {
-        break
-      }
-    }
+    this.tip = block.hash
+  }
 
-    return hashes
+  /**
+   * @param {String} hash
+   * @returns {Promise<Block>} block
+   */
+  async getBlock(hash) {
+    const blockData = await this.db.get(hash)
+    const block = new Block()
+    block.deserialize(blockData)
+    return block
   }
 }
 

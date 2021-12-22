@@ -1,7 +1,6 @@
 const crypto = require('crypto')
-const { setInterval } = require('timers/promises')
 
-const Difficulty = 2
+const Difficulty = 3
 
 class ProofOfWork {
   constructor(block) {

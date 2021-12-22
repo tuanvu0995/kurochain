@@ -101,6 +101,8 @@ class UTXOSet {
     }
     return UTXOs
   }
+
+  
 }
 
 module.exports = UTXOSet
