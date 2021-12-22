@@ -3,7 +3,7 @@ const Commandline = require('../cli/cli')
 const Database = require('./database')
 const Block = require('./block')
 const { delay } = require('./utils/promise')
-const {cmdToArray} = require('./utils/cmd')
+const { cmdToArray } = require('./utils/cmd')
 
 const NODE_ADDRESS = 'localhost'
 const NODE_PORT = 3000
@@ -61,7 +61,6 @@ class Node {
    */
   async hanlderCmd(socket, data) {
     const cmdStr = data.toString()
-    console.log('Reveive: ', data.toString())
     const cmdArr = cmdToArray(cmdStr)
 
     if (!cmdArr.length) {
@@ -78,9 +77,9 @@ class Node {
         const bestHeight = Number(cmdArr[2])
         const myBestHeight = await this.cli.blockChain.getBestHeight()
         if (myBestHeight > bestHeight) {
-          this.sendVersion(socket)
+          this.sendVersionCmd(socket)
         } else {
-          this.sendGetBlockCmd(socket, bestHeight, myBestHeight + 1)
+          this.sendGetBlockCmd(socket, myBestHeight + 1, bestHeight)
         }
         break
       case 'getblock':
@@ -154,8 +153,7 @@ class Node {
    * @param {Number} endHeight
    */
   async handleGetBlock(socket, startHeight, endHeight) {
-    const blocks = await this.cli.hashSet.getHashes(startHeight, endHeight)
-    const hashes = blocks.map((block) => block.hash)
+    const hashes = await this.cli.hashSet.getHashes(startHeight, endHeight)
     socket.write(`regetblock:${hashes.join('|')}:${startHeight}:${endHeight}`)
   }
 
@@ -169,7 +167,7 @@ class Node {
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
     if (startHeight > endHeight) {
-      await this.sendGetBlockCmd(socket, startHeight, endHeight)
+      await this.sendGetBlockCmd(socket, startHeight + 20, endHeight)
     } else {
       this.startGetBlockData(socket)
     }
