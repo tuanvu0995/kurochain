@@ -3,6 +3,7 @@ const Commandline = require('../cli/cli')
 const Database = require('./database')
 const Block = require('./block')
 const { delay } = require('./utils/promise')
+const {cmdToArray} = require('./utils/cmd')
 
 const NODE_ADDRESS = 'localhost'
 const NODE_PORT = 3000
@@ -47,7 +48,7 @@ class Node {
     const [address, port] = knowNodes[0].split(':')
     socket.connect(port, address, () => {
       console.log('Connected to server')
-      this.sendVersionCmd()
+      this.sendVersionCmd(socket)
     })
 
     socket.on('data', (data) => this.hanlderCmd(socket, data))
@@ -153,7 +154,7 @@ class Node {
    * @param {Number} endHeight
    */
   async handleGetBlock(socket, startHeight, endHeight) {
-    const blocks = await this.cli.blockChain.getBlocks(startHeight, endHeight)
+    const blocks = await this.cli.hashSet.getHashes(startHeight, endHeight)
     const hashes = blocks.map((block) => block.hash)
     socket.write(`regetblock:${hashes.join('|')}:${startHeight}:${endHeight}`)
   }
