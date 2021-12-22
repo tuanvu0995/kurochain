@@ -1,3 +1,4 @@
+const net = require('net')
 const Commandline = require('../cli/cli')
 const Database = require('./database')
 const Block = require('./block')
