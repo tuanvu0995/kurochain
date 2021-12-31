@@ -63,8 +63,8 @@ class Node {
    */
   async hanlderCmd(socket, data) {
     const cmdStr = data.toString()
-    console.log('CMD STR: ', cmdArr)
-    
+    console.log('CMD STR: ', cmdStr)
+
     const cmdArr = cmdToArray(cmdStr)
     console.log(cmdArr)
 
