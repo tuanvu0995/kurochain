@@ -1,11 +1,6 @@
-const delay = (time = 1000) =>
-  new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      clearTimeout(timeout)
-      resolve()
-    }, time)
-  })
-
-  module.exports = {
-      delay
-  }
+function delay(ms = 1000) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+module.exports = {
+  delay,
+}
