@@ -8,20 +8,17 @@ const WalletManager = require('../core/walletManager')
 const UTXOSet = require('../core/utxoset')
 const { validateAddress } = require('../core/utils/wallet')
 const Wallet = require('../core/wallet')
-const HashSet = require('../core/hashset')
 
 class Commandline {
   /**
    * @param {BlockChain} blockChain
    * @param {WalletManager} walletManager
    * @param {UTXOSet} utxoSet
-   * @param {HashSet} hashSet
    */
-  constructor(blockChain, walletManager, utxoSet, hashSet) {
+  constructor(blockChain, walletManager, utxoSet) {
     this.blockChain = blockChain
     this.wlmg = walletManager
     this.utxoSet = utxoSet
-    this.hashSet = hashSet
   }
 
   greeting() {
@@ -98,7 +95,6 @@ class Commandline {
     const rewardTx = Transaction.NewCoinbaseTX(fromWallet, true)
     const block = await this.blockChain.mineBlock([tx, rewardTx])
     await this.utxoSet.update(block)
-    await this.hashSet.update(block)
     console.log(
       colors.green(
         `Send ${colors.red(amount)} coin to ${colors.red(to)} success!`
@@ -186,7 +182,6 @@ class Commandline {
     const result = await this.blockChain.createBlockChain(wallet)
     if (result) {
       this.utxoSet.reindex()
-      this.hashSet.reindex()
     }
   }
 
@@ -249,10 +244,6 @@ class Commandline {
     console.log('Reindex UTXO stated!')
     await this.utxoSet.reindex()
     console.log(colors.green('Reindex UTXO success!'))
-
-    console.log('Reindex Hash stated!')
-    await this.hashSet.reindex()
-    console.log(colors.green('Reindex Hash success!'))
   }
 
   /**

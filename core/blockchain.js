@@ -204,9 +204,7 @@ class BlockChain {
    * @returns {Promise<Block>}
    */
   async getLastBlock() {
-    const iterator = new BlockchainIterator(this.tip, this.db)
-    const lastBlock = await iterator.next()
-    return lastBlock
+    return await this.getBlock(this.tip)
   }
 
   /**
@@ -236,6 +234,41 @@ class BlockChain {
     const block = new Block()
     block.deserialize(blockData)
     return block
+  }
+
+  /**
+   * @param {Number} fromHeight
+   * @param {Number} toHeight
+   * @returns {Promise<Number>}
+   */
+  async getBlocks(fromHeight, toHeight) {
+    const blocks = []
+    let currentHeight = 0
+    const bci = new BlockchainIterator(this.tip, this.db)
+
+    while (true) {
+      const block = await bci.next()
+      currentHeight = block.height
+      if (currentHeight <= fromHeight || currentHeight >= toHeight) {
+        block.push(block)
+      }
+
+      if (!block.prevHash.length || currentHeight < toHeight) {
+        break
+      }
+    }
+
+    return blocks
+  }
+
+  /**
+   * @param {Number} fromHeight
+   * @param {Number} toHeight
+   * @returns {Promise<String>}
+   */
+  async getHashes(fromHeight, toHeight) {
+    const blocks = await this.getBlocks(fromHeight, toHeight)
+    return blocks.map(block => block.hash)
   }
 }
 

@@ -79,7 +79,7 @@ class Node {
         if (myBestHeight > bestHeight) {
           this.sendVersionCmd(socket)
         } else {
-          this.sendGetBlockCmd(socket, myBestHeight + 1, bestHeight)
+          this.sendGetBlockCmd(socket, bestHeight, myBestHeight + 1)
         }
         break
       case 'getblock':
@@ -121,11 +121,11 @@ class Node {
 
   /**
    * @param {net.Socket} socket
-   * @param {Number} startHeight
-   * @param {Number} endHeight
+   * @param {Number} fromHeight
+   * @param {Number} toHeight
    */
-  async sendGetBlockCmd(socket, startHeight, endHeight) {
-    socket.write(`getblock:${startHeight}:${endHeight}`)
+  async sendGetBlockCmd(socket, fromHeight, toHeight) {
+    socket.write(`getblock:${fromHeight}:${toHeight}`)
   }
 
   /**
@@ -152,25 +152,25 @@ class Node {
 
   /**
    * @param {net.Socket} socket
-   * @param {Number} startHeight
-   * @param {Number} endHeight
+   * @param {Number} fromHeight
+   * @param {Number} toHeight
    */
-  async handleGetBlock(socket, startHeight, endHeight) {
-    const hashes = await this.cli.hashSet.getHashes(startHeight, endHeight)
-    socket.write(`regetblock:${hashes.join('|')}:${startHeight}:${endHeight}`)
+  async handleGetBlock(socket, fromHeight, toHeight) {
+    const hashes = await this.cli.hashSet.getHashes(fromHeight, toHeight)
+    socket.write(`regetblock:${hashes.join('|')}:${fromHeight}:${toHeight}`)
   }
 
   /**
    * @param {net.Socket} socket
    * @param {String} blockHashes
-   * @param {Number} startHeight
-   * @param {Number} endHeight
+   * @param {Number} fromHeight
+   * @param {Number} toHeight
    */
-  async receiveGetBlock(socket, blockHashes, startHeight, endHeight) {
+  async receiveGetBlock(socket, blockHashes, fromHeight, toHeight) {
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
-    if (startHeight < endHeight) {
-      await this.sendGetBlockCmd(socket, startHeight + 20, endHeight)
+    if (fromHeight < toHeight) {
+      await this.sendGetBlockCmd(socket, fromHeight - 20, toHeight - 20)
     } else {
       this.startGetBlockData(socket)
     }

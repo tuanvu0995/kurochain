@@ -5,7 +5,6 @@ const { green, red } = require('colors')
 const WalletManager = require('./core/walletManager')
 const UTXOSet = require('./core/utxoset')
 const Node = require('./core/node')
-const HashSet = require('./core/hashset')
 
 const main = async () => {
   const argv = minimist(process.argv.slice(2))
@@ -21,9 +20,8 @@ const main = async () => {
   const blockChain = new BlockChain(config)
   await blockChain.initBlockChain()
   const utxoSet = new UTXOSet(blockChain, config)
-  const hashSet = new HashSet(blockChain, config)
 
-  const cli = new Commandline(blockChain, walletManager, utxoSet, hashSet)
+  const cli = new Commandline(blockChain, walletManager, utxoSet)
 
   switch (action) {
     case 'send':
