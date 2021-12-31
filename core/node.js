@@ -9,7 +9,7 @@ const NODE_ADDRESS = '0.0.0.0'
 const NODE_PORT = 3000
 const NODE_VERSION = 1
 
-const MAX_HASHES_LENGTH = 10
+const MAX_HASHES_LENGTH = 20
 
 const knowNodes = ['192.168.1.23:3000']
 
