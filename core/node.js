@@ -64,9 +64,9 @@ class Node {
   async hanlderCmd(socket, data) {
     const cmdStr = data.toString()
     console.log('CMD STR: ', cmdArr)
-    console.log(cmdArr)
     
     const cmdArr = cmdToArray(cmdStr)
+    console.log(cmdArr)
 
     if (!cmdArr.length) {
       return socket.write('ERROR: Invalid command')
