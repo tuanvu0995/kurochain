@@ -105,7 +105,7 @@ class Node {
         )
         break
       case 'getblockdata':
-        await this.handleGetBlockdata(socket, cmdArr[1])
+        await this.handleGetBlockData(socket, cmdArr[1])
         break
       case 'regetblockdata':
         await this.receiveBlockData(cmdArr[1])
