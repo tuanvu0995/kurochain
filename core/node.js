@@ -13,7 +13,7 @@ const MAX_HASHES_LENGTH = 20
 
 const knowNodes = ['192.168.1.23:3000']
 
-const blocksInTransit = []
+let blocksInTransit = []
 
 class Node {
   /**
@@ -141,7 +141,7 @@ class Node {
    * @param {net.Socket} socket
    */
   async startGetBlockData(socket) {
-    console.log('START GET BLOCK DATA')
+    console.log('START GET BLOCK DATA', blocksInTransit.length)
     for (let i = 0; i < blocksInTransit.length; i++) {
       console.log('Index: ', i)
       const hash = blocksInTransit[i]
@@ -179,8 +179,7 @@ class Node {
   async receiveGetBlock(socket, blockHashes, fromHeight, toHeight) {
     const myBestHeight = await this.cli.blockChain.getBestHeight()
     const hashes = blockHashes.split('|')
-    console.log('Hashes: ', hashes)
-    blocksInTransit.concat(hashes)
+    blocksInTransit = blocksInTransit.concat(hashes)
     if (myBestHeight < toHeight && toHeight > 0) {
       const targetHeight = toHeight - MAX_HASHES_LENGTH - 1
       await this.sendGetBlockCmd(
