@@ -156,7 +156,6 @@ class Node {
     block.deserialize(blockData)
     await this.cli.blockChain.saveBlock(block)
     await this.cli.utxoSet.update(block)
-    await this.cli.hashSet.update(block)
   }
 
   /**
@@ -179,7 +178,7 @@ class Node {
     const myBestHeight = await this.cli.blockChain.getBestHeight()
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
-    if (myBestHeight <= toHeight) {
+    if (myBestHeight < toHeight || toHeight > 0) {
       const targetHeight = toHeight - MAX_HASHES_LENGTH - 1
       await this.sendGetBlockCmd(
         socket,
