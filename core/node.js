@@ -184,7 +184,7 @@ class Node {
       await this.sendGetBlockCmd(
         socket,
         fromHeight - MAX_HASHES_LENGTH - 1,
-        targetHeight < 0 ? targetHeight : 0
+        targetHeight < 0 ? 0 : targetHeight
       )
     } else {
       this.startGetBlockData(socket)
