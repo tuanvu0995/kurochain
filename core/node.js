@@ -9,7 +9,7 @@ const NODE_ADDRESS = 'localhost'
 const NODE_PORT = 3000
 const NODE_VERSION = 1
 
-const knowNodes = ['192.168.113:3000']
+const knowNodes = ['192.168.23:3000']
 
 const blocksInTransit = []
 
