@@ -5,9 +5,11 @@ const Block = require('./block')
 const { delay } = require('./utils/promise')
 const { cmdToArray } = require('./utils/cmd')
 
-const NODE_ADDRESS = 'localhost'
+const NODE_ADDRESS = '0.0.0.0'
 const NODE_PORT = 3000
 const NODE_VERSION = 1
+
+const MAX_HASHES_LENGTH = 20
 
 const knowNodes = ['192.168.1.23:3000']
 
@@ -79,7 +81,9 @@ class Node {
         if (myBestHeight > bestHeight) {
           this.sendVersionCmd(socket)
         } else {
-          this.sendGetBlockCmd(socket, bestHeight, myBestHeight + 1)
+          const fromHeight = bestHeight
+          const toHeight = (bestHeight - myBestHeight > 20) ? bestHeight - MAX_HASHES_LENGTH : myBestHeight + 1
+          this.sendGetBlockCmd(socket, fromHeight, toHeight)
         }
         break
       case 'getblock':
@@ -156,7 +160,7 @@ class Node {
    * @param {Number} toHeight
    */
   async handleGetBlock(socket, fromHeight, toHeight) {
-    const hashes = await this.cli.hashSet.getHashes(fromHeight, toHeight)
+    const hashes = await this.cli.blockChain.getHashes(fromHeight, toHeight)
     socket.write(`regetblock:${hashes.join('|')}:${fromHeight}:${toHeight}`)
   }
 
@@ -170,7 +174,7 @@ class Node {
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
     if (fromHeight < toHeight) {
-      await this.sendGetBlockCmd(socket, fromHeight - 20, toHeight - 20)
+      await this.sendGetBlockCmd(socket, fromHeight - MAX_HASHES_LENGTH, toHeight - MAX_HASHES_LENGTH)
     } else {
       this.startGetBlockData(socket)
     }

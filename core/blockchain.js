@@ -250,7 +250,7 @@ class BlockChain {
       const block = await bci.next()
       currentHeight = block.height
       if (currentHeight <= fromHeight || currentHeight >= toHeight) {
-        block.push(block)
+        blocks.push(block)
       }
 
       if (!block.prevHash.length || currentHeight < toHeight) {

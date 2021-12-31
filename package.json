@@ -4,6 +4,8 @@
   "main": "main.js",
   "license": "0BSD",
   "scripts": {
+    "start": "node main",
+    "serve:central": "node main serve --central",
     "test": "jest"
   },
   "dependencies": {
