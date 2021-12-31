@@ -105,7 +105,7 @@ class Node {
         )
         break
       case 'getblockdata':
-        await this.handleGetBlockdat(socket, cmdArr[1])
+        await this.handleGetBlockdata(socket, cmdArr[1])
         break
       case 'regetblockdata':
         await this.receiveBlockData(cmdArr[1])
@@ -141,7 +141,9 @@ class Node {
    * @param {net.Socket} socket
    */
   async startGetBlockData(socket) {
+    console.log('START GET BLOCK DATA')
     for (let i = 0; i < blocksInTransit.length; i++) {
+      console.log('Index: ', i)
       const hash = blocksInTransit[i]
       socket.write(`getblockdata:${hash}`)
       await delay(200)
