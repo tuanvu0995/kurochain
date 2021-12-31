@@ -63,12 +63,15 @@ class Node {
    */
   async hanlderCmd(socket, data) {
     const cmdStr = data.toString()
+    console.log('CMD STR: ', cmdArr)
+    console.log(cmdArr)
+    
     const cmdArr = cmdToArray(cmdStr)
 
     if (!cmdArr.length) {
       return socket.write('ERROR: Invalid command')
     }
-    console.log(cmdArr)
+    
 
     switch (cmdArr[0]) {
       case 'version':
@@ -82,7 +85,10 @@ class Node {
           this.sendVersionCmd(socket)
         } else {
           const fromHeight = bestHeight
-          const toHeight = (bestHeight - myBestHeight > 20) ? bestHeight - MAX_HASHES_LENGTH : myBestHeight + 1
+          const toHeight =
+            bestHeight - myBestHeight > 20
+              ? bestHeight - MAX_HASHES_LENGTH
+              : myBestHeight + 1
           this.sendGetBlockCmd(socket, fromHeight, toHeight)
         }
         break
@@ -106,7 +112,7 @@ class Node {
         await this.receiveBlockData(cmdArr[1])
         break
       case 'ERROR':
-        console.log('ERROR: ', cmdArr)
+        console.log('Client send error: ', cmdArr)
         break
       default:
         socket.write('ERROR: Unknown command!')
@@ -175,7 +181,11 @@ class Node {
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
     if (myBestHeight < toHeight) {
-      await this.sendGetBlockCmd(socket, fromHeight - MAX_HASHES_LENGTH, toHeight - MAX_HASHES_LENGTH)
+      await this.sendGetBlockCmd(
+        socket,
+        fromHeight - MAX_HASHES_LENGTH - 1,
+        toHeight - MAX_HASHES_LENGTH - 1
+      )
     } else {
       this.startGetBlockData(socket)
     }
