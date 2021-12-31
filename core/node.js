@@ -171,9 +171,10 @@ class Node {
    * @param {Number} toHeight
    */
   async receiveGetBlock(socket, blockHashes, fromHeight, toHeight) {
+    const myBestHeight = await this.cli.blockChain.getBestHeight()
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
-    if (fromHeight < toHeight) {
+    if (myBestHeight < toHeight) {
       await this.sendGetBlockCmd(socket, fromHeight - MAX_HASHES_LENGTH, toHeight - MAX_HASHES_LENGTH)
     } else {
       this.startGetBlockData(socket)
