@@ -102,9 +102,8 @@ class Node {
         await this.receiveBlockData(cmdArr[1])
         break
       case 'ERROR':
-          
-          console.log("ERROR: ", cmdArr)
-          break
+        console.log('ERROR: ', cmdArr)
+        break
       default:
         socket.write('ERROR: Unknown command!')
     }

@@ -57,6 +57,7 @@ class HashSet {
     const stopHeight = currentHeight + limit
     for await (const [height, hash] of this.db.iterator()) {
       const blockHeight = Number(height)
+      console.log(blockHeight)
       if (blockHeight <= endHeight) {
         hashes.push(hash)
       }
