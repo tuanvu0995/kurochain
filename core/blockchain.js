@@ -249,13 +249,16 @@ class BlockChain {
     while (true) {
       const block = await bci.next()
       currentHeight = block.height
-      if (currentHeight <= fromHeight || currentHeight >= toHeight) {
+
+      if (currentHeight <= fromHeight && currentHeight > toHeight) {
         blocks.push(block)
       }
 
       if (!block.prevHash.length || currentHeight < toHeight) {
         break
       }
+
+      
     }
 
     return blocks
@@ -268,7 +271,7 @@ class BlockChain {
    */
   async getHashes(fromHeight, toHeight) {
     const blocks = await this.getBlocks(fromHeight, toHeight)
-    return blocks.map(block => block.hash)
+    return blocks.map((block) => block.hash)
   }
 }
 
