@@ -71,7 +71,6 @@ class Node {
     if (!cmdArr.length) {
       return socket.write('ERROR: Invalid command')
     }
-    
 
     switch (cmdArr[0]) {
       case 'version':
@@ -181,10 +180,11 @@ class Node {
     const hashes = blockHashes.split('|')
     blocksInTransit.concat(hashes)
     if (myBestHeight < toHeight) {
+      const targetHeight = toHeight - MAX_HASHES_LENGTH - 1
       await this.sendGetBlockCmd(
         socket,
         fromHeight - MAX_HASHES_LENGTH - 1,
-        toHeight <= 0 ? 0: toHeight - MAX_HASHES_LENGTH - 1
+        targetHeight < 0 ? targetHeight : 0
       )
     } else {
       this.startGetBlockData(socket)
