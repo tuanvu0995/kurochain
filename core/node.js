@@ -155,9 +155,8 @@ class Node {
    */
   async receiveBlockData(blockData) {
     const block = new Block()
-    block.deserialize(blockData)
+    block.fromMessage(blockData)
     await this.cli.blockChain.saveBlock(block)
-    await this.cli.utxoSet.update(block)
   }
 
   /**
@@ -199,7 +198,7 @@ class Node {
   async handleGetBlockData(socket, hash) {
     const block = await this.cli.blockChain.getBlock(hash)
     if (block) {
-      socket.write(`regetblockdata:${block.serialize()}`)
+      socket.write(`regetblockdata:${block.toMessage()}`)
     }
   }
 }

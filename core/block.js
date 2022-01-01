@@ -49,6 +49,20 @@ class Block {
     })
   }
 
+  toMessage() {
+    return `${this.timestamp}|${this.prevHash}|${this.hash}|${this.nonce}|${this.hash}|${this.height}`
+  }
+
+  fromMessage(message) {
+    const arr = message.split('|')
+    this.timestamp = arr[0]
+    this.prevHash = arr[1]
+    this.hash = arr[2]
+    this.nonce = Number(arr[3])
+    this.hash = arr[4]
+    this.height = Number(arr[5])
+  }
+
   /**
    *
    * @param {String} data
